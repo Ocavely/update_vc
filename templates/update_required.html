@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>请更新到最新版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 动态背景粒子效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
+                radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.4), transparent);
+            background-size: 200px 200px;
+            animation: particleMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes particleMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-200px); }
+        }
+
+        .container {
+            text-align: center;
+            color: #fff;
+            z-index: 1;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .time-display {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .update-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .main-text {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, #fff 0%, #a8c0ff 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+            text-shadow: 0 0 30px rgba(168, 192, 255, 0.3);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .version-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 20px;
+        }
+
+        .version-box {
+            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .current-version {
+            color: #ff6b6b;
+        }
+
+        .target-version {
+            color: #4ecdc4;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.5);
+            animation: arrowMove 1.5s ease-in-out infinite;
+        }
+
+        @keyframes arrowMove {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        .sub-text {
+            margin-top: 40px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 装饰性圆环 */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: ringExpand 4s ease-out infinite;
+        }
+
+        .ring-1 {
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-2 {
+            width: 400px;
+            height: 400px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: 1s;
+        }
+
+        .ring-3 {
+            width: 500px;
+            height: 500px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: 2s;
+        }
+
+        @keyframes ringExpand {
+            0% {
+                opacity: 0.5;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 装饰性圆环 -->
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+
+    <div class="container">
+        <div class="time-display" id="timeDisplay">
+            加载中...
+        </div>
+        <div class="update-icon" onclick="doUpdate()" style="cursor: pointer;">🔄</div>
+        <div class="main-text">请更新到最新版本</div>
+        <div class="version-info">
+            <span class="version-box current-version" id="currentVersion">v1.0</span>
+            <span class="arrow">→</span>
+            <span class="version-box target-version" id="targetVersion">v2.0</span>
+        </div>
+        <div class="sub-text">点击中间图标更新</div>
+    </div>
+
+    <script>
+        function doUpdate() {
+            // 显示加载状态
+            document.querySelector('.update-icon').textContent = '⏳';
+            document.querySelector('.sub-text').textContent = '正在下载更新...';
+
+            // 调用后端 API 下载更新
+            fetch('/api/download_update_from_github', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector('.update-icon').textContent = '✅';
+                    document.querySelector('.sub-text').textContent = data.message || '下载完成';
+                } else {
+                    document.querySelector('.update-icon').textContent = '🔄';
+                    document.querySelector('.sub-text').textContent = '下载失败: ' + (data.error || '未知错误');
+                }
+            })
+            .catch(err => {
+                document.querySelector('.update-icon').textContent = '🔄';
+                document.querySelector('.sub-text').textContent = '下载失败，请重试';
+            });
+        }
+    </script>
+
+    <script>
+        // 更新时间显示
+        function updateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const weekday = weekdays[now.getDay()];
+
+            const timeString = `${year}年${month}月${day}日 ${weekday} ${hours}:${minutes}:${seconds}`;
+            document.getElementById('timeDisplay').textContent = timeString;
+        }
+
+        // 初始化
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // 从 URL 获取版本参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentVer = urlParams.get('current') || 'v1.0';
+        const targetVer = urlParams.get('target') || 'v2.0';
+
+        document.getElementById('currentVersion').textContent = currentVer;
+        document.getElementById('targetVersion').textContent = targetVer;
+    </script>
+</body>
+</html>
