@@ -183,8 +183,8 @@ class Updater:
 
     def format_update_progress(self, step: str, success: bool = True, details: str = "") -> str:
         """格式化更新进度输出"""
-        status = "✓" if success else "✗"
-        output = f"[{status}] {step}"
+        status = "[OK]" if success else "[X]"
+        output = f"{status} {step}"
         if details:
             output += f": {details}"
         return output
