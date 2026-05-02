@@ -686,10 +686,6 @@ def set_closewindows():
     """设置 closewindows=true"""
     return dismiss_windows_popup()
 
-
-update_progress_data = {'progress': 0, 'status': '准备中...'}
-
-
 @app.route('/api/download_update_from_github', methods=['POST'])
 def download_update_from_github():
     """从 GitHub 下载更新并替换根目录文件"""
@@ -697,93 +693,83 @@ def download_update_from_github():
         import urllib.request
         import zipfile
         import shutil
-        import threading
-        import time as time_module
 
-        global update_progress_data
-        update_progress_data = {'progress': 0, 'status': '准备中...'}
-
+        # 下载URL
         download_url = "https://github.com/Ocavely/update_vc/archive/refs/heads/main.zip"
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         update_dir = os.path.join(script_dir, 'update')
 
+        # 创建 update 目录（用于临时下载）
         os.makedirs(update_dir, exist_ok=True)
+
+        # 下载文件
         temp_zip = os.path.join(update_dir, 'update_temp.zip')
 
-        def download_with_progress():
-            global update_progress_data
-            try:
-                update_progress_data = {'progress': 5, 'status': '连接服务器...'}
+        app.logger.info(f"开始从 GitHub 下载更新: {download_url}")
 
-                req = urllib.request.Request(
-                    download_url,
-                    headers={
-                        'User-Agent': 'Mozilla/5.0',
-                        'Accept': 'application/zip'
-                    }
-                )
+        req = urllib.request.Request(
+            download_url,
+            headers={
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/zip'
+            }
+        )
 
-                with urllib.request.urlopen(req, timeout=120) as response:
-                    total_size = int(response.headers.get('Content-Length', 0))
-                    downloaded_size = 0
-                    update_progress_data = {'progress': 10, 'status': '下载中...'}
+        with urllib.request.urlopen(req, timeout=60) as response:
+            total_size = response.headers.get('Content-Length', 0)
+            downloaded_size = 0
 
-                    with open(temp_zip, 'wb') as f:
-                        while True:
-                            chunk = response.read(8192)
-                            if not chunk:
-                                break
-                            f.write(chunk)
-                            downloaded_size += len(chunk)
-                            if total_size > 0:
-                                percent = min(80, int(downloaded_size / total_size * 80))
-                                update_progress_data = {'progress': 10 + percent, 'status': f'下载中... {percent}%'}
+            with open(temp_zip, 'wb') as f:
+                while True:
+                    chunk = response.read(8192)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
 
-                update_progress_data = {'progress': 85, 'status': '解压文件...'}
+        # 解压并直接替换根目录文件
+        with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+            for member in zip_ref.namelist():
+                if '/' in member:
+                    parts = member.split('/', 1)
+                    if len(parts) > 1:
+                        # 目标路径为根目录
+                        target_path = os.path.join(script_dir, parts[1])
+                        if not member.endswith('/'):
+                            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                            # 备份原文件
+                            if os.path.exists(target_path):
+                                backup_path = target_path + '.bak'
+                                shutil.copy2(target_path, backup_path)
+                            # 写入新文件
+                            with open(target_path, 'wb') as out_file:
+                                out_file.write(zip_ref.read(member))
 
-                with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
-                    total_files = len(zip_ref.namelist())
-                    for i, member in enumerate(zip_ref.namelist()):
-                        if '/' in member:
-                            parts = member.split('/', 1)
-                            if len(parts) > 1:
-                                target_path = os.path.join(script_dir, parts[1])
-                                if not member.endswith('/'):
-                                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                                    with open(target_path, 'wb') as out_file:
-                                        out_file.write(zip_ref.read(member))
-                        if i % 10 == 0:
-                            percent = 85 + int(i / total_files * 14)
-                            update_progress_data = {'progress': percent, 'status': '安装中...'}
+        # 删除临时zip
+        os.remove(temp_zip)
 
-                os.remove(temp_zip)
-                update_progress_data = {'progress': 100, 'status': '更新完成'}
-
-            except Exception as e:
-                update_progress_data = {'progress': 0, 'status': f'错误: {str(e)}'}
-
-        thread = threading.Thread(target=download_with_progress)
-        thread.start()
-
+        app.logger.info("更新文件下载并替换完成")
         return jsonify({
             'success': True,
-            'message': '更新已启动'
+            'message': '更新完成，请重启程序'
         })
 
     except Exception as e:
         app.logger.error(f"下载更新失败: {e}")
+        # 清理临时文件
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            update_dir = os.path.join(script_dir, 'update')
+            temp_zip = os.path.join(update_dir, 'update_temp.zip')
+            if os.path.exists(temp_zip):
+                os.remove(temp_zip)
+        except:
+            pass
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-
-
-@app.route('/api/update_progress', methods=['GET'])
-def get_update_progress():
-    """获取更新进度"""
-    global update_progress_data
-    return jsonify(update_progress_data)
 
 @app.route('/api/system_info')
 def get_system_info():

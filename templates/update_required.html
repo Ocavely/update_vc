@@ -18,7 +18,39 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 动态背景粒子效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
+                radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.4), transparent);
+            background-size: 200px 200px;
+            animation: particleMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes particleMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-200px); }
         }
 
         .container {
@@ -58,15 +90,31 @@
         .update-icon {
             font-size: 80px;
             margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
             display: inline-block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .main-text {
             font-size: 42px;
             font-weight: 700;
             margin-bottom: 30px;
-            color: #fff;
+            background: linear-gradient(90deg, #fff 0%, #a8c0ff 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
             text-shadow: 0 0 30px rgba(168, 192, 255, 0.3);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
         }
 
         .version-info {
@@ -97,72 +145,18 @@
         .arrow {
             font-size: 24px;
             color: rgba(255, 255, 255, 0.5);
+            animation: arrowMove 1.5s ease-in-out infinite;
+        }
+
+        @keyframes arrowMove {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
         }
 
         .sub-text {
             margin-top: 40px;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* 更新进度条 */
-        .progress-container {
-            display: none;
-            margin-top: 30px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .progress-container.active {
-            display: block;
-        }
-
-        .progress-bar-wrapper {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #4ecdc4 0%, #44a3aa 100%);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-            position: relative;
-        }
-
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        }
-
-        .progress-text {
-            margin-top: 10px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .progress-percent {
-            color: #4ecdc4;
-            font-weight: 500;
-        }
-
-        .progress-status {
-            margin-top: 15px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            min-height: 20px;
         }
 
         /* 装饰性圆环 */
@@ -229,28 +223,15 @@
             <span class="version-box target-version" id="targetVersion">v2.0</span>
         </div>
         <div class="sub-text">点击中间图标更新</div>
-        
-        <!-- 更新进度条 -->
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar-wrapper">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progressStatus">准备下载...</span>
-                <span class="progress-percent" id="progressPercent">0%</span>
-            </div>
-        </div>
     </div>
 
     <script>
-        let progressInterval = null;
-
         function doUpdate() {
+            // 显示加载状态
             document.querySelector('.update-icon').textContent = '⏳';
             document.querySelector('.sub-text').textContent = '正在下载更新...';
-            document.getElementById('progressContainer').classList.add('active');
-            updateProgress(0, '正在连接服务器...');
 
+            // 调用后端 API 下载更新
             fetch('/api/download_update_from_github', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'}
@@ -258,57 +239,17 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    stopProgressPoll();
                     document.querySelector('.update-icon').textContent = '✅';
-                    updateProgress(100, '下载完成');
-                    document.querySelector('.sub-text').textContent = data.message || '下载完成，请重启程序';
+                    document.querySelector('.sub-text').textContent = data.message || '下载完成';
                 } else {
-                    stopProgressPoll();
                     document.querySelector('.update-icon').textContent = '🔄';
                     document.querySelector('.sub-text').textContent = '下载失败: ' + (data.error || '未知错误');
                 }
             })
             .catch(err => {
-                stopProgressPoll();
                 document.querySelector('.update-icon').textContent = '🔄';
                 document.querySelector('.sub-text').textContent = '下载失败，请重试';
             });
-
-            startProgressPoll();
-        }
-
-        function updateProgress(percent, status) {
-            const progressBar = document.getElementById('progressBar');
-            const progressPercent = document.getElementById('progressPercent');
-            const progressStatus = document.getElementById('progressStatus');
-
-            progressBar.style.width = percent + '%';
-            progressPercent.textContent = percent + '%';
-            progressStatus.textContent = status;
-        }
-
-        function startProgressPoll() {
-            if (progressInterval) clearInterval(progressInterval);
-            progressInterval = setInterval(() => {
-                fetch('/api/update_progress', {
-                    method: 'GET',
-                    headers: {'Content-Type': 'application/json'}
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.progress !== undefined) {
-                        updateProgress(data.progress, data.status || '下载中...');
-                    }
-                })
-                .catch(() => {});
-            }, 1000);
-        }
-
-        function stopProgressPoll() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-                progressInterval = null;
-            }
         }
     </script>
 

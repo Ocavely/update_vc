@@ -64,8 +64,6 @@ class Updater:
         "*.pyc",       # Python编译文件
         "temp_update", # 临时更新文件夹
         "backup",      # 备份文件夹
-        "libs",       # 依赖库文件夹
-        "reference_audio",  # 参考音频文件夹
     ]
 
     # GitHub代理列表 - 第一组: 支持API Zipball的镜像 (优先使用)
@@ -185,8 +183,8 @@ class Updater:
 
     def format_update_progress(self, step: str, success: bool = True, details: str = "") -> str:
         """格式化更新进度输出"""
-        status = "[OK]" if success else "[X]"
-        output = f"{status} {step}"
+        status = "✓" if success else "✗"
+        output = f"[{status}] {step}"
         if details:
             output += f": {details}"
         return output
