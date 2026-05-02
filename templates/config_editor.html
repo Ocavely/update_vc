@@ -2688,7 +2688,7 @@
             }
             
             // 确认导入操作
-            if (!confirm(`完整目录导入会替换现有数据（会自动备份）。\n将导入 ${files.length} 个文件。确定要继续吗？`)) {
+            if (!confirm(`完整目录导入会替换现有数据。\n将导入 ${files.length} 个文件。确定要继续吗？`)) {
                 return;
             }
             
@@ -2712,9 +2712,6 @@
                 
                 if (response.ok) {
                     let message = result.message || '完整目录导入成功！';
-                    if (result.backup_location) {
-                        message += '\n\n备份位置: ' + result.backup_location;
-                    }
                     alert(message);
                     alert('✅ 导入已成功！\n\n💡 建议重启一次Run.bat\n\n原因：如果旧配置的端口不是5000，\n或者修改了其他启动配置，\n需要重启Run.bat才能生效。');
                     closeImportModal();
@@ -4444,9 +4441,8 @@ document.getElementById('oneKeyDiagnosticButton').addEventListener('click', asyn
                 <div style="font-size: 13px; color: #666; background-color:#fff3cd; padding:10px; border-radius:4px; border-left: 4px solid #ffc107;">
                     <p style="margin-top:0; font-weight:bold;">重要提示：</p>
                     <ul style="padding-left:20px; margin-bottom:0;">
-                        <li><strong>会自动备份</strong>当前数据到"数据备份/{时间}_导入备份"目录</li>
                         <li>将导入以下内容：config.py、prompts文件夹、emojis文件夹、forum_data文件夹、CoreMemory文件夹、Memory_Temp文件夹、recurring_reminders.json文件、chat_contexts.json文件</li>
-                        <li><strong>现有数据会被完全替换</strong>（已备份，可手动恢复）</li>
+                        <li><strong>现有数据会被完全替换</strong></li>
                         <li>请选择包含完整程序目录结构的文件夹</li>
                         <li>若无法导入文件夹，请尝试更换您的浏览器</li>
                     </ul>

@@ -16,8 +16,6 @@
 - GitHub版本检查
 - 更新包下载（增加下载进度指示）
 - 文件更新
-- 备份和恢复
-- 更新回滚
 - 对 config.py 进行更新时合并用户原有的配置选项（保留原有注释和格式，仅追加新增项）
 """
 
@@ -58,12 +56,10 @@ class Updater:
         "recurring_reminders.json",  # 定时提醒
         "chat_contexts.json", # 聊天上下文文件
         "config.py",    # 配置文件(单独处理)
-        "数据备份",  # 数据备份
         ".git",        # Git仓库文件（避免权限问题）
         "__pycache__", # Python缓存文件
         "*.pyc",       # Python编译文件
         "temp_update", # 临时更新文件夹
-        "backup",      # 备份文件夹
     ]
 
     # GitHub代理列表 - 第一组: 支持API Zipball的镜像 (优先使用)
@@ -370,62 +366,6 @@ class Updater:
                 'output': "检查更新失败：无法连接到更新服务器"
             }
 
-    def backup_important_files(self) -> bool:
-        """在更新前备份重要文件和文件夹到数据备份/{时间}_更新备份目录"""
-        try:
-            # 创建带时间戳的备份目录
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_dir = os.path.join(self.root_dir, '数据备份', f'{timestamp}_更新备份')
-            os.makedirs(backup_dir, exist_ok=True)
-            
-            # 需要备份的文件
-            files_to_backup = [
-                "config.py",
-                "recurring_reminders.json",
-                "chat_contexts.json"
-            ]
-            
-            # 需要备份的文件夹
-            folders_to_backup = [
-                "prompts",
-                "emojis", 
-                "forum_data",
-                "CoreMemory",
-                "Memory_Temp"
-            ]
-            
-            backed_up_items = []
-            
-            # 备份单个文件
-            for file in files_to_backup:
-                src_file = os.path.join(self.root_dir, file)
-                if os.path.exists(src_file):
-                    dst_file = os.path.join(backup_dir, file)
-                    os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-                    shutil.copy2(src_file, dst_file)
-                    logger.info(f"已备份文件: {file}")
-                    backed_up_items.append(f"{file}文件")
-            
-            # 备份文件夹
-            for folder in folders_to_backup:
-                src_folder = os.path.join(self.root_dir, folder)
-                if os.path.exists(src_folder):
-                    dst_folder = os.path.join(backup_dir, folder)
-                    shutil.copytree(src_folder, dst_folder)
-                    logger.info(f"已备份文件夹: {folder}")
-                    backed_up_items.append(f"{folder}文件夹")
-            
-            if backed_up_items:
-                logger.info(f"重要文件已备份到: {backup_dir}")
-                logger.info(f"备份项目: {', '.join(backed_up_items)}")
-            else:
-                logger.info(f"没有找到需要备份的文件或文件夹")
-                
-            return True
-        except Exception as e:
-            logger.error(f"备份重要文件失败: {str(e)}")
-            return False
-
     def should_skip_file(self, file_path: str) -> bool:
         """检查是否应该跳过更新某个文件"""
         return any(skip_file in file_path for skip_file in self.SKIP_FILES)
@@ -454,71 +394,6 @@ class Updater:
             except Exception as e2:
                 logger.error(f"强制删除也失败: {str(e2)}")
                 return False
-
-    def backup_current_version(self) -> bool:
-        """备份当前版本"""
-        try:
-            backup_dir = os.path.join(self.root_dir, 'backup')
-            if os.path.exists(backup_dir):
-                self._safe_remove_tree(backup_dir)
-            
-            # 使用自定义的忽略函数，更安全地处理文件权限问题
-            def ignore_func(dir_path, filenames):
-                ignored = []
-                for name in filenames:
-                    full_path = os.path.join(dir_path, name)
-                    # 检查是否应该跳过
-                    if any(skip_pattern in full_path for skip_pattern in self.SKIP_FILES):
-                        ignored.append(name)
-                    # 跳过可能有权限问题的文件
-                    elif name.startswith('.git') or name.endswith('.lock'):
-                        ignored.append(name)
-                return ignored
-            
-            shutil.copytree(self.root_dir, backup_dir, ignore=ignore_func)
-            logger.info(f"当前版本已备份到: {backup_dir}")
-            return True
-        except Exception as e:
-            logger.error(f"备份失败: {str(e)}")
-            return False
-
-    def restore_from_backup(self) -> bool:
-        """从备份恢复"""
-        try:
-            backup_dir = os.path.join(self.root_dir, 'backup')
-            if not os.path.exists(backup_dir):
-                logger.error("备份目录不存在")
-                return False
-                
-            logger.info("开始从备份恢复...")
-            for root, dirs, files in os.walk(backup_dir):
-                relative_path = os.path.relpath(root, backup_dir)
-                target_dir = os.path.join(self.root_dir, relative_path)
-                
-                for file in files:
-                    if not self.should_skip_file(file):
-                        try:
-                            src_file = os.path.join(root, file)
-                            dst_file = os.path.join(target_dir, file)
-                            os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-                            
-                            # 如果目标文件存在，尝试删除
-                            if os.path.exists(dst_file):
-                                try:
-                                    os.remove(dst_file)
-                                except OSError:
-                                    logger.warning(f"无法删除现有文件: {dst_file}")
-                            
-                            shutil.copy2(src_file, dst_file)
-                        except Exception as file_error:
-                            logger.warning(f"恢复文件失败 {file}: {str(file_error)}")
-                            continue
-            
-            logger.info("从备份恢复完成")
-            return True
-        except Exception as e:
-            logger.error(f"恢复失败: {str(e)}")
-            return False
 
     def apply_update(self) -> Tuple[bool, str]:
         """
@@ -565,10 +440,6 @@ class Updater:
             if os.path.exists(self.temp_dir):
                 logger.info(f"正在删除临时目录: {self.temp_dir}")
                 self._safe_remove_tree(self.temp_dir)
-            backup_dir = os.path.join(self.root_dir, 'backup')
-            if os.path.exists(backup_dir):
-                logger.info(f"正在删除备份目录: {backup_dir}")
-                self._safe_remove_tree(backup_dir)
             extract_dir = os.path.join(self.temp_dir, 'extracted')
             if os.path.exists(extract_dir):
                 logger.info(f"正在删除解压目录: {extract_dir}")
@@ -711,34 +582,16 @@ class Updater:
                     
             log_progress(f"开始更新到版本: {update_info['version']}")
             
-            # 添加重要文件备份步骤
-            log_progress("开始备份重要文件...")
-            if not self.backup_important_files():
-                log_progress("备份重要文件", False, "备份失败")
-                if not self.prompt_continue_update():
-                    return {'success': False, 'output': '\n'.join(progress)}
-            else:
-                log_progress("备份重要文件", True, "备份完成")
-            
             log_progress("开始下载更新...")
             if not self.download_update(update_info['download_url'], callback=log_progress):
                 log_progress("下载更新", False, "下载失败")
                 return {'success': False, 'output': '\n'.join(progress)}
-            log_progress("下载更新", True, "下载完成")
-                
-            log_progress("开始备份当前版本...")
-            if not self.backup_current_version():
-                log_progress("备份当前版本", False, "备份失败")
-                return {'success': False, 'output': '\n'.join(progress)}
-            log_progress("备份当前版本", True, "备份完成")
-                
+log_progress("下载更新", True, "下载完成")
+            
             log_progress("开始应用更新...")
             success, new_dir = self.apply_update()
             if not success:
                 log_progress("应用更新", False, "更新失败")
-                log_progress("正在恢复之前的版本...")
-                if not self.restore_from_backup():
-                    log_progress("恢复备份", False, "恢复失败！请手动处理")
                 return {'success': False, 'output': '\n'.join(progress)}
             log_progress("应用更新", True, "更新成功")
             
@@ -819,19 +672,6 @@ class Updater:
         except Exception as e:
             logger.error(f"更新失败: {str(e)}")
             return {'success': False, 'error': str(e), 'output': f"更新失败: {str(e)}"}
-
-    def prompt_continue_update(self) -> bool:
-        """当备份失败时，询问用户是否继续更新"""
-        print("\n警告：备份重要文件失败！")
-        while True:
-            choice = input("是否仍要继续更新?\n输入'y'继续更新 / 输入'n'取消更新: ").lower().strip()
-            if choice in ('y', 'yes'):
-                print("\n继续更新...")
-                return True
-            elif choice in ('n', 'no'):
-                print("\n已取消更新")
-                return False
-            print("请输入 y 或 n")
 
     @staticmethod
     def parse_config_file(path):

@@ -738,10 +738,6 @@ def download_update_from_github():
                         target_path = os.path.join(script_dir, parts[1])
                         if not member.endswith('/'):
                             os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                            # 备份原文件
-                            if os.path.exists(target_path):
-                                backup_path = target_path + '.bak'
-                                shutil.copy2(target_path, backup_path)
                             # 写入新文件
                             with open(target_path, 'wb') as out_file:
                                 out_file.write(zip_ref.read(member))
@@ -2125,82 +2121,6 @@ def import_config():
         app.logger.error(f"配置导入失败: {str(e)}")
         return jsonify({'error': f'导入失败: {str(e)}'}), 500
 
-def create_backup_directory():
-    """创建备份目录"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_dir = os.path.join(BASE_DIR, "数据备份", f"{timestamp}_导入备份")
-    os.makedirs(backup_dir, exist_ok=True)
-    return backup_dir
-
-def backup_existing_data(backup_dir):
-    """备份现有数据到指定目录"""
-    backed_up_items = []
-    
-    try:
-        # 备份 prompts 文件夹
-        prompts_dir = os.path.join(BASE_DIR, 'prompts')
-        if os.path.exists(prompts_dir):
-            backup_prompts = os.path.join(backup_dir, 'prompts')
-            shutil.copytree(prompts_dir, backup_prompts)
-            backed_up_items.append('prompts文件夹')
-        
-        # 备份 emojis 文件夹
-        emojis_dir = os.path.join(BASE_DIR, 'emojis')
-        if os.path.exists(emojis_dir):
-            backup_emojis = os.path.join(backup_dir, 'emojis')
-            shutil.copytree(emojis_dir, backup_emojis)
-            backed_up_items.append('emojis文件夹')
-        
-        # 备份 forum_data 文件夹
-        forum_data_dir = FORUM_DATA_DIR
-        if os.path.exists(forum_data_dir):
-            backup_forum = os.path.join(backup_dir, 'forum_data')
-            shutil.copytree(forum_data_dir, backup_forum)
-            backed_up_items.append('forum_data文件夹')
-        
-        # 备份 CoreMemory 文件夹
-        config = parse_config()
-        core_memory_dir = os.path.join(BASE_DIR, config.get('CORE_MEMORY_DIR', 'CoreMemory'))
-        if os.path.exists(core_memory_dir):
-            backup_core = os.path.join(backup_dir, os.path.basename(core_memory_dir))
-            shutil.copytree(core_memory_dir, backup_core)
-            backed_up_items.append('CoreMemory文件夹')
-        
-        # 备份 recurring_reminders.json 文件
-        reminders_file = os.path.join(BASE_DIR, 'recurring_reminders.json')
-        if os.path.exists(reminders_file):
-            backup_reminders = os.path.join(backup_dir, 'recurring_reminders.json')
-            shutil.copy2(reminders_file, backup_reminders)
-            backed_up_items.append('recurring_reminders.json文件')
-        
-        # 备份 chat_contexts.json 文件
-        chat_contexts_file = os.path.join(BASE_DIR, 'chat_contexts.json')
-        if os.path.exists(chat_contexts_file):
-            backup_chat_contexts = os.path.join(backup_dir, 'chat_contexts.json')
-            shutil.copy2(chat_contexts_file, backup_chat_contexts)
-            backed_up_items.append('chat_contexts.json文件')
-        
-        # 备份 Memory_Temp 文件夹
-        config = parse_config()
-        memory_temp_dirname = config.get('MEMORY_TEMP_DIR', 'Memory_Temp')
-        memory_temp_dir = os.path.join(BASE_DIR, memory_temp_dirname)
-        if os.path.exists(memory_temp_dir):
-            backup_memory_temp = os.path.join(backup_dir, memory_temp_dirname)
-            shutil.copytree(memory_temp_dir, backup_memory_temp)
-            backed_up_items.append('Memory_Temp文件夹')
-        
-        # 备份 config.py 文件
-        config_file = os.path.join(BASE_DIR, 'config.py')
-        if os.path.exists(config_file):
-            backup_config = os.path.join(backup_dir, 'config.py')
-            shutil.copy2(config_file, backup_config)
-            backed_up_items.append('config.py文件')
-        
-        return backed_up_items
-    except Exception as e:
-        app.logger.error(f"备份数据失败: {str(e)}")
-        raise Exception(f"备份失败: {str(e)}")
-
 def import_directory_data(source_dir):
     """从源目录导入数据"""
     imported_items = []
@@ -2393,30 +2313,19 @@ def import_full_directory():
         if not config_found:
             return jsonify({'error': '选择的目录中没有找到config.py文件'}), 400
         
-        # 创建备份目录
-        backup_dir = create_backup_directory()
-        
-        # 备份现有数据
-        backed_up_items = backup_existing_data(backup_dir)
-        
         # 导入新数据
         imported_items = import_files_data(files_dict)
         
         # 构建结果消息
         message = f"完整目录导入成功！\n"
         message += f"共处理了 {len(uploaded_files)} 个文件\n"
-        if backed_up_items:
-            message += f"已备份的数据: {', '.join(backed_up_items)}\n"
         if imported_items:
             message += f"已导入的数据: {', '.join(imported_items)}\n"
-        message += f"备份位置: {backup_dir}"
         
         return jsonify({
             'success': True, 
             'message': message,
-            'backed_up_items': backed_up_items,
             'imported_items': imported_items,
-            'backup_location': backup_dir,
             'files_count': len(uploaded_files)
         }), 200
                 
