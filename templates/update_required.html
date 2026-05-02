@@ -18,39 +18,7 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
             overflow: hidden;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 动态背景粒子效果 */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
-                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
-                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.3), transparent),
-                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
-                radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.4), transparent);
-            background-size: 200px 200px;
-            animation: particleMove 20s linear infinite;
-            pointer-events: none;
-        }
-
-        @keyframes particleMove {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-200px); }
         }
 
         .container {
@@ -90,31 +58,15 @@
         .update-icon {
             font-size: 80px;
             margin-bottom: 20px;
-            animation: pulse 2s ease-in-out infinite;
             display: inline-block;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
         }
 
         .main-text {
             font-size: 42px;
             font-weight: 700;
             margin-bottom: 30px;
-            background: linear-gradient(90deg, #fff 0%, #a8c0ff 50%, #fff 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
+            color: #fff;
             text-shadow: 0 0 30px rgba(168, 192, 255, 0.3);
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
         }
 
         .version-info {
@@ -145,12 +97,6 @@
         .arrow {
             font-size: 24px;
             color: rgba(255, 255, 255, 0.5);
-            animation: arrowMove 1.5s ease-in-out infinite;
-        }
-
-        @keyframes arrowMove {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(5px); }
         }
 
         .sub-text {
@@ -197,12 +143,6 @@
             right: 0;
             bottom: 0;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
         }
 
         .progress-text {
