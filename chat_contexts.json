@@ -1,1 +1,12 @@
-{}
+{
+    "Ocavely": [
+        {
+            "role": "user",
+            "content": "[2026-05-03 Sunday 00:32:25] 你好 "
+        },
+        {
+            "role": "assistant",
+            "content": "你好呀~晚上好\\最近还开心吗？"
+        }
+    ]
+}

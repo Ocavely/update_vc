@@ -1382,7 +1382,8 @@ def parse_config():
 
 def update_config(new_values):
     """
-    更新 save.config 配置文件内容，确保文件写入安全性和原子性，避免文件被清空或损坏。
+    更新 save/save.config 配置文件内容，bot.py 已改为直接读取此文件。
+    确保文件写入安全性和原子性，避免文件被清空或损坏。
     """
     save_file = get_save_config_path()
     save_dir = os.path.dirname(save_file)

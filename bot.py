@@ -24,7 +24,7 @@ from typing import Optional
 import pyautogui
 import shutil
 import re
-from config import *
+import ast
 import queue
 import json
 from threading import Timer
@@ -33,6 +33,50 @@ from urllib.parse import urlparse
 import os
 import ctypes
 os.environ["PROJECT_NAME"] = 'iwyxdxl/WeChatBot_WXAUTO_SE'
+
+
+# ============================================================
+# 配置加载器：从 save/save.config 读取所有配置
+# config.py 仅作模板参考，不再参与运行时加载
+# ============================================================
+def _load_save_config():
+    """从 save/save.config 解析配置，返回 {变量名: 值} 字典"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_file = os.path.join(script_dir, 'save', 'save.config')
+
+    # 如果 save.config 不存在，从 config.py 初始化
+    if not os.path.exists(save_file):
+        config_py = os.path.join(script_dir, 'config.py')
+        if os.path.exists(config_py):
+            with open(config_py, 'r', encoding='utf-8') as f:
+                content = f.read()
+            save_dir = os.path.join(script_dir, 'save')
+            os.makedirs(save_dir, exist_ok=True)
+            with open(save_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logging.info("save.config 不存在，已从 config.py 初始化")
+
+    config = {}
+    with open(save_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            match = re.match(r'^(\w+)\s*=\s*(.*)$', stripped)
+            if match:
+                var_name = match.group(1)
+                raw_value = match.group(2).strip()
+                try:
+                    config[var_name] = ast.literal_eval(raw_value)
+                except Exception:
+                    config[var_name] = raw_value
+    return config
+
+
+# 加载配置并注入全局命名空间
+_cfg = _load_save_config()
+globals().update(_cfg)
+del _cfg  # 清理临时变量
 
 # 导入GPT-SoVITS TTS模块
 try:

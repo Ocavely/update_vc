@@ -209,4 +209,4 @@ VOICE_DIR = 'voices'
 
 
 # 自动补充的配置项
-LISTEN_LIST = [['微信名1', '角色1']]
+LISTEN_LIST = [['Ocavely', '1']]
