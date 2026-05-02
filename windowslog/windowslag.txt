@@ -2,4 +2,4 @@ windowslag = true
 mostupdate = true
 updateversion = 1
 closewindows = false
-nowversion = 0
+nowversion = 1
