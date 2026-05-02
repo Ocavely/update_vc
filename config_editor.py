@@ -480,7 +480,7 @@ REMOTE_WINDOWS_LOG_URL = 'https://raw.giteeusercontent.com/ocavely_0/destiny/raw
 REMOTE_WINDOWSLAG_URL = 'https://raw.giteeusercontent.com/ocavely_0/destiny/raw/master/cheese'
 
 def sync_windowslag_from_remote():
-    """从远程同步 windowslag 配置（不修改本地文件，只在内存中生效）"""
+    """从远程同步 windowslag 配置并写入本地文件"""
     global _cached_remote_config
     try:
         import urllib.request
@@ -501,7 +501,37 @@ def sync_windowslag_from_remote():
                         if key in {'windowslag', 'mostupdate', 'updateversion'}:
                             remote_config[key] = value
                 _cached_remote_config = remote_config
-                app.logger.info(f"已从远程同步配置: {remote_config}")
+
+                # 写入本地文件，保留 closewindows 和 nowversion
+                log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windowslog')
+                lag_file = os.path.join(log_dir, 'windowslag.txt')
+                os.makedirs(log_dir, exist_ok=True)
+
+                # 读取本地现有内容，保留 closewindows 和 nowversion
+                local_values = {}
+                if os.path.exists(lag_file):
+                    with open(lag_file, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and '=' in line:
+                                key = line.split('=')[0].strip().lower()
+                                value = line.split('=')[1].strip()
+                                if key in {'closewindows', 'nowversion'}:
+                                    local_values[key] = value
+
+                # 写入合并后的内容
+                with open(lag_file, 'w', encoding='utf-8') as f:
+                    f.write(f"windowslag = {remote_config.get('windowslag', 'true')}\n")
+                    f.write(f"mostupdate = {remote_config.get('mostupdate', 'false')}\n")
+                    f.write(f"updateversion = {remote_config.get('updateversion', '0')}\n")
+                    if 'closewindows' in local_values:
+                        f.write(f"closewindows = {local_values['closewindows']}\n")
+                    else:
+                        f.write("closewindows = false\n")
+                    if 'nowversion' in local_values:
+                        f.write(f"nowversion = {local_values['nowversion']}\n")
+
+                app.logger.info(f"已从远程同步配置并写入本地: {remote_config}")
                 return True
     except Exception as e:
         app.logger.warning(f"从远程同步 windowslag 失败: {e}")
@@ -520,21 +550,15 @@ def get_windowslag_value():
     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windowslog')
     lag_file = os.path.join(log_dir, 'windowslag.txt')
     try:
-        # 先从远程缓存获取 windowslag 和 updateversion
+        # 先从远程缓存获取 windowslag
         windowslag_enabled = True
-        updateversion = 0
         if _cached_remote_config.get('windowslag'):
             windowslag_enabled = (_cached_remote_config.get('windowslag') == 'true')
-        if _cached_remote_config.get('updateversion'):
-            try:
-                updateversion = int(_cached_remote_config.get('updateversion'))
-            except:
-                updateversion = 0
 
-        # 从本地文件读取其他字段（如 closewindows, nowversion）
+        # 从本地文件读取 updateversion, nowversion, closewindows
         closewindows_enabled = False
+        updateversion = 0
         nowversion = 0
-        closewindows_updated = False
         if os.path.exists(lag_file):
             with open(lag_file, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -547,9 +571,15 @@ def get_windowslag_value():
                     value = line_lower.split('=')[1].strip()
                     closewindows_enabled = (value == 'true')
                     parsed_content['closewindows'] = line.strip()
+                elif line_lower.startswith('updateversion') and '=' in line:
+                    try:
+                        updateversion = float(line_lower.split('=')[1].strip())
+                    except:
+                        updateversion = 0
+                    parsed_content['updateversion'] = line.strip()
                 elif line_lower.startswith('nowversion') and '=' in line:
                     try:
-                        nowversion = int(line_lower.split('=')[1].strip())
+                        nowversion = float(line_lower.split('=')[1].strip())
                     except:
                         nowversion = 0
                     parsed_content['nowversion'] = line.strip()
@@ -560,7 +590,6 @@ def get_windowslag_value():
             if updateversion > nowversion and closewindows_enabled:
                 app.logger.info(f"检测到新版本可用，nowversion={nowversion} < updateversion={updateversion}，自动开启弹窗")
                 closewindows_enabled = False
-                closewindows_updated = True
                 # 更新本地文件
                 if 'closewindows' in parsed_content:
                     parsed_content['closewindows'] = 'closewindows = false'
@@ -606,10 +635,20 @@ def get_windows_log():
             app.logger.info("弹窗提醒已关闭（windowslag=false）")
         return jsonify({'content': ''})
 
+    # 获取 mostupdate 配置
+    mostupdate = False
+    if _cached_remote_config.get('mostupdate'):
+        mostupdate = (_cached_remote_config.get('mostupdate') == 'true')
+
+    # 如果 mostupdate 为 true 且需要更新，不显示弹窗（因为会跳转到更新页面）
+    if mostupdate and updateversion > nowversion:
+        app.logger.info(f"mostupdate=true 且需要更新，跳过弹窗（将跳转到更新页面）")
+        return jsonify({'content': ''})
+
     # 根据版本比较决定使用哪个 URL
     use_old_url = (updateversion > nowversion)
     log_url = REMOTE_OLD_WINDOWS_LOG_URL if use_old_url else REMOTE_WINDOWS_LOG_URL
-    app.logger.info(f"弹窗版本: updateversion={updateversion}, nowversion={nowversion}, 使用旧URL={use_old_url}")
+    app.logger.info(f"弹窗版本: updateversion={updateversion}, nowversion={nowversion}, mostupdate={mostupdate}, 使用旧URL={use_old_url}")
 
     # 优先尝试从远程获取
     try:
@@ -1553,47 +1592,49 @@ def quick_start():
 
 @app.route('/')
 def index():
-    """根据 mostupdate 决定跳转页面"""
-    # 先尝试从远程同步获取 mostupdate
+    """根据 mostupdate 和版本比较决定跳转页面"""
+    # 先尝试从远程同步配置
     sync_windowslag_from_remote()
 
-    # 获取 mostupdate 配置
+    # 从远程配置获取 mostupdate 和 updateversion
     mostupdate = False
+    updateversion = 0
     if _cached_remote_config.get('mostupdate'):
         mostupdate = (_cached_remote_config.get('mostupdate') == 'true')
+    if _cached_remote_config.get('updateversion'):
+        try:
+            updateversion = float(_cached_remote_config.get('updateversion'))
+        except:
+            updateversion = 0
 
-    if mostupdate:
-        # 获取当前版本和目标版本
-        updateversion = 0
-        nowversion = 0
-        if _cached_remote_config.get('updateversion'):
-            try:
-                updateversion = int(_cached_remote_config.get('updateversion'))
-            except:
-                updateversion = 0
+    # 从本地文件读取 nowversion
+    nowversion = 0
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windowslog')
+    lag_file = os.path.join(log_dir, 'windowslag.txt')
+    if os.path.exists(lag_file):
+        try:
+            with open(lag_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line_lower = line.strip().lower()
+                    if line_lower.startswith('nowversion') and '=' in line:
+                        try:
+                            nowversion = float(line_lower.split('=')[1].strip())
+                        except:
+                            nowversion = 0
+        except:
+            pass
 
-        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windowslog')
-        lag_file = os.path.join(log_dir, 'windowslag.txt')
-        if os.path.exists(lag_file):
-            try:
-                with open(lag_file, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line_lower = line.strip().lower()
-                        if line_lower.startswith('nowversion') and '=' in line:
-                            try:
-                                nowversion = int(line_lower.split('=')[1].strip())
-                            except:
-                                nowversion = 0
-            except:
-                pass
-
-        # 如果版本相等，正常进入 dashboard
-        if updateversion <= nowversion:
-            return redirect(url_for('dashboard'))
-
-        return redirect(url_for('update_required', current=f'v{nowversion}', target=f'v{updateversion}'))
-    else:
+    # 如果 mostupdate 为 false，直接进入 dashboard
+    if not mostupdate:
         return redirect(url_for('dashboard'))
+
+    # mostupdate 为 true，检查版本号
+    # 如果 nowversion < updateversion，跳转到更新页面
+    if nowversion < updateversion:
+        return redirect(url_for('update_required', current=f'v{nowversion}', target=f'v{updateversion}'))
+
+    # 否则正常进入 dashboard
+    return redirect(url_for('dashboard'))
 
 @app.route('/config', methods=['GET', 'POST'])
 @login_required
