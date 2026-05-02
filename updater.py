@@ -64,6 +64,8 @@ class Updater:
         "*.pyc",       # Python编译文件
         "temp_update", # 临时更新文件夹
         "backup",      # 备份文件夹
+        "libs",       # 依赖库文件夹
+        "reference_audio",  # 参考音频文件夹
     ]
 
     # GitHub代理列表 - 第一组: 支持API Zipball的镜像 (优先使用)
