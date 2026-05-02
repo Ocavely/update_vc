@@ -751,9 +751,6 @@ def download_update_from_github():
                                 target_path = os.path.join(script_dir, parts[1])
                                 if not member.endswith('/'):
                                     os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                                    if os.path.exists(target_path):
-                                        backup_path = target_path + '.bak'
-                                        shutil.copy2(target_path, backup_path)
                                     with open(target_path, 'wb') as out_file:
                                         out_file.write(zip_ref.read(member))
                         if i % 10 == 0:

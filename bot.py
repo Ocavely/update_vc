@@ -82,8 +82,8 @@ def safe_read_file_with_encoding(file_path, fallback_content=""):
                 content = f.read()
             
             # 如果不是UTF-8编码读取成功，自动转换为UTF-8
-            if encoding != 'utf-8':
-                logger.info(f"文件 {file_path} 使用 {encoding} 编码读取成功，正在转换为UTF-8")
+if encoding != 'utf-8':
+                logger.info(f"文件 {file_path} 使用 {encoding} 编码读取成功正在转换为UTF-8")
                 backup_path = f"{file_path}.bak_{int(time.time())}"
                 try:
                     shutil.copy(file_path, backup_path)
