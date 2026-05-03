@@ -1311,6 +1311,12 @@ def save_all_config():
             if isinstance(prob, int) and 0 <= prob <= 100:
                 new_values['EMOJI_SENDING_PROBABILITY'] = prob
         
+        # 更新用户列表（如果包含在请求中）
+        if 'LISTEN_LIST' in data:
+            users = data.get('LISTEN_LIST', [])
+            if users and all(len(user) == 2 for user in users):
+                new_values['LISTEN_LIST'] = users
+        
         if new_values:
             update_config(new_values)
             app.logger.info(f"配置已保存: {list(new_values.keys())}")
@@ -1353,7 +1359,7 @@ def get_user_info():
             except:
                 pass
         
-        return jsonify({
+        response = jsonify({
             'users': users,
             'prompt_files': prompt_files,
             'user_count': len(listen_list),
@@ -1361,6 +1367,10 @@ def get_user_info():
             'message_count': total_messages,
             'context_count': len(chat_context_users)
         })
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     except Exception as e:
         app.logger.error(f"获取用户信息失败: {e}")
         return jsonify({'error': str(e)}), 500
