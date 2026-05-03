@@ -1034,6 +1034,237 @@ def get_ai_settings():
         app.logger.error(f"获取AI设置失败: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/timer_config')
+def get_timer_config():
+    """获取定时器配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'ENABLE_REMINDERS': config.get('ENABLE_REMINDERS', True),
+            'ALLOW_REMINDERS_IN_QUIET_TIME': config.get('ALLOW_REMINDERS_IN_QUIET_TIME', False),
+            'USE_VOICE_CALL_FOR_REMINDERS': config.get('USE_VOICE_CALL_FOR_REMINDERS', True)
+        })
+    except Exception as e:
+        app.logger.error(f"获取定时器配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_timer_config', methods=['POST'])
+def save_timer_config():
+    """保存定时器配置"""
+    try:
+        data = request.json
+        new_values = {}
+        
+        if 'ENABLE_REMINDERS' in data:
+            new_values['ENABLE_REMINDERS'] = bool(data['ENABLE_REMINDERS'])
+        if 'ALLOW_REMINDERS_IN_QUIET_TIME' in data:
+            new_values['ALLOW_REMINDERS_IN_QUIET_TIME'] = bool(data['ALLOW_REMINDERS_IN_QUIET_TIME'])
+        if 'USE_VOICE_CALL_FOR_REMINDERS' in data:
+            new_values['USE_VOICE_CALL_FOR_REMINDERS'] = bool(data['USE_VOICE_CALL_FOR_REMINDERS'])
+        
+        if new_values:
+            update_config(new_values)
+            app.logger.info(f"定时器配置已保存: {list(new_values.keys())}")
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存定时器配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/active_message_config')
+def get_active_message_config():
+    """获取主动消息配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'ENABLE_AUTO_MESSAGE': config.get('ENABLE_AUTO_MESSAGE', True),
+            'AUTO_MESSAGE': config.get('AUTO_MESSAGE', ''),
+            'MIN_COUNTDOWN_HOURS': config.get('MIN_COUNTDOWN_HOURS', 0.5),
+            'MAX_COUNTDOWN_HOURS': config.get('MAX_COUNTDOWN_HOURS', 1.0),
+            'QUIET_TIME_START': config.get('QUIET_TIME_START', '23:00'),
+            'QUIET_TIME_END': config.get('QUIET_TIME_END', '09:00'),
+            'IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE': config.get('IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE', False)
+        })
+    except Exception as e:
+        app.logger.error(f"获取主动消息配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_active_message_config', methods=['POST'])
+def save_active_message_config():
+    """保存主动消息配置"""
+    try:
+        data = request.json
+        new_values = {}
+        
+        if 'ENABLE_AUTO_MESSAGE' in data:
+            new_values['ENABLE_AUTO_MESSAGE'] = bool(data['ENABLE_AUTO_MESSAGE'])
+        if 'AUTO_MESSAGE' in data:
+            new_values['AUTO_MESSAGE'] = data['AUTO_MESSAGE']
+        if 'MIN_COUNTDOWN_HOURS' in data:
+            new_values['MIN_COUNTDOWN_HOURS'] = float(data['MIN_COUNTDOWN_HOURS'])
+        if 'MAX_COUNTDOWN_HOURS' in data:
+            new_values['MAX_COUNTDOWN_HOURS'] = float(data['MAX_COUNTDOWN_HOURS'])
+        if 'QUIET_TIME_START' in data:
+            new_values['QUIET_TIME_START'] = data['QUIET_TIME_START']
+        if 'QUIET_TIME_END' in data:
+            new_values['QUIET_TIME_END'] = data['QUIET_TIME_END']
+        if 'IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE' in data:
+            new_values['IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE'] = bool(data['IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE'])
+        
+        if new_values:
+            update_config(new_values)
+            app.logger.info(f"主动消息配置已保存: {list(new_values.keys())}")
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存主动消息配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recovery_config')
+def get_recovery_config():
+    """获取恢复间隔配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'RESTART_INTERVAL_HOURS': config.get('RESTART_INTERVAL_HOURS', 2.0),
+            'RESTART_INACTIVITY_MINUTES': config.get('RESTART_INACTIVITY_MINUTES', 15)
+        })
+    except Exception as e:
+        app.logger.error(f"获取恢复间隔配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_recovery_config', methods=['POST'])
+def save_recovery_config():
+    """保存恢复间隔配置"""
+    try:
+        data = request.json
+        new_values = {}
+        
+        if 'RESTART_INTERVAL_HOURS' in data:
+            new_values['RESTART_INTERVAL_HOURS'] = float(data['RESTART_INTERVAL_HOURS'])
+        if 'RESTART_INACTIVITY_MINUTES' in data:
+            new_values['RESTART_INACTIVITY_MINUTES'] = int(data['RESTART_INACTIVITY_MINUTES'])
+        
+        if new_values:
+            update_config(new_values)
+            app.logger.info(f"恢复间隔配置已保存: {list(new_values.keys())}")
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存恢复间隔配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/memory_config')
+def get_memory_config():
+    """获取记忆配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'ENABLE_MEMORY': config.get('ENABLE_MEMORY', True),
+            'UPLOAD_MEMORY_TO_AI': config.get('UPLOAD_MEMORY_TO_AI', True),
+            'SAVE_MEMORY_TO_SEPARATE_FILE': config.get('SAVE_MEMORY_TO_SEPARATE_FILE', True),
+            'MAX_MEMORY_NUMBER': config.get('MAX_MEMORY_NUMBER', 50)
+        })
+    except Exception as e:
+        app.logger.error(f"获取记忆配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/typing_config')
+def get_typing_config():
+    """获取打字/回复间隔配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'QUEUE_WAITING_TIME': config.get('QUEUE_WAITING_TIME', 5),
+            'AVERAGE_TYPING_SPEED': config.get('AVERAGE_TYPING_SPEED', 0.03),
+            'RANDOM_TYPING_SPEED_MIN': config.get('RANDOM_TYPING_SPEED_MIN', 0.01),
+            'RANDOM_TYPING_SPEED_MAX': config.get('RANDOM_TYPING_SPEED_MAX', 0.05)
+        })
+    except Exception as e:
+        app.logger.error(f"获取打字配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_all_advanced_config', methods=['POST'])
+def save_all_advanced_config():
+    """保存所有高级配置（定时器+主动消息+恢复间隔等）"""
+    try:
+        data = request.json
+        new_values = {}
+        
+        # API Key
+        api_key = data.get('api_key', '').strip()
+        if api_key:
+            new_values['DEEPSEEK_API_KEY'] = api_key
+            new_values['MOONSHOT_API_KEY'] = api_key
+            new_values['ONLINE_API_KEY'] = api_key
+            new_values['IMAGE_GENERATION_API_KEY'] = api_key
+            new_values['ASSISTANT_API_KEY'] = api_key
+        
+        # AI设置
+        if 'user_selfie_description' in data:
+            new_values['USER_SELFIE_DESCRIPTION'] = data['user_selfie_description']
+        if 'enable_interrupt_reply' in data:
+            new_values['ENABLE_INTERRUPT_REPLY'] = bool(data['enable_interrupt_reply'])
+        
+        # 定时器配置
+        if 'ENABLE_REMINDERS' in data:
+            new_values['ENABLE_REMINDERS'] = bool(data['ENABLE_REMINDERS'])
+        if 'ALLOW_REMINDERS_IN_QUIET_TIME' in data:
+            new_values['ALLOW_REMINDERS_IN_QUIET_TIME'] = bool(data['ALLOW_REMINDERS_IN_QUIET_TIME'])
+        if 'USE_VOICE_CALL_FOR_REMINDERS' in data:
+            new_values['USE_VOICE_CALL_FOR_REMINDERS'] = bool(data['USE_VOICE_CALL_FOR_REMINDERS'])
+        
+        # 主动消息配置
+        if 'ENABLE_AUTO_MESSAGE' in data:
+            new_values['ENABLE_AUTO_MESSAGE'] = bool(data['ENABLE_AUTO_MESSAGE'])
+        if 'AUTO_MESSAGE' in data:
+            new_values['AUTO_MESSAGE'] = data['AUTO_MESSAGE']
+        if 'MIN_COUNTDOWN_HOURS' in data:
+            new_values['MIN_COUNTDOWN_HOURS'] = float(data['MIN_COUNTDOWN_HOURS'])
+        if 'MAX_COUNTDOWN_HOURS' in data:
+            new_values['MAX_COUNTDOWN_HOURS'] = float(data['MAX_COUNTDOWN_HOURS'])
+        if 'QUIET_TIME_START' in data:
+            new_values['QUIET_TIME_START'] = data['QUIET_TIME_START']
+        if 'QUIET_TIME_END' in data:
+            new_values['QUIET_TIME_END'] = data['QUIET_TIME_END']
+        if 'IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE' in data:
+            new_values['IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE'] = bool(data['IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE'])
+        
+        # 恢复间隔配置
+        if 'RESTART_INTERVAL_HOURS' in data:
+            new_values['RESTART_INTERVAL_HOURS'] = float(data['RESTART_INTERVAL_HOURS'])
+        if 'RESTART_INACTIVITY_MINUTES' in data:
+            new_values['RESTART_INACTIVITY_MINUTES'] = int(data['RESTART_INACTIVITY_MINUTES'])
+        
+        # 记忆配置
+        if 'ENABLE_MEMORY' in data:
+            new_values['ENABLE_MEMORY'] = bool(data['ENABLE_MEMORY'])
+        if 'UPLOAD_MEMORY_TO_AI' in data:
+            new_values['UPLOAD_MEMORY_TO_AI'] = bool(data['UPLOAD_MEMORY_TO_AI'])
+        if 'SAVE_MEMORY_TO_SEPARATE_FILE' in data:
+            new_values['SAVE_MEMORY_TO_SEPARATE_FILE'] = bool(data['SAVE_MEMORY_TO_SEPARATE_FILE'])
+        if 'MAX_MEMORY_NUMBER' in data:
+            new_values['MAX_MEMORY_NUMBER'] = int(data['MAX_MEMORY_NUMBER'])
+        
+        # 打字/回复间隔配置
+        if 'QUEUE_WAITING_TIME' in data:
+            new_values['QUEUE_WAITING_TIME'] = int(data['QUEUE_WAITING_TIME'])
+        if 'AVERAGE_TYPING_SPEED' in data:
+            new_values['AVERAGE_TYPING_SPEED'] = float(data['AVERAGE_TYPING_SPEED'])
+        if 'RANDOM_TYPING_SPEED_MIN' in data:
+            new_values['RANDOM_TYPING_SPEED_MIN'] = float(data['RANDOM_TYPING_SPEED_MIN'])
+        if 'RANDOM_TYPING_SPEED_MAX' in data:
+            new_values['RANDOM_TYPING_SPEED_MAX'] = float(data['RANDOM_TYPING_SPEED_MAX'])
+        
+        if new_values:
+            update_config(new_values)
+            app.logger.info(f"高级配置已保存: {list(new_values.keys())}")
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存高级配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/save_api_key', methods=['POST'])
 def save_api_key():
     """保存API Key到save/config，替换所有API_KEY值"""
