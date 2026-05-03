@@ -2,14 +2,6 @@
     "Ocavely": [
         {
             "role": "user",
-            "content": "[2026-05-03 Sunday 01:56:44] 你好 "
-        },
-        {
-            "role": "assistant",
-            "content": "嗯~你还没睡呀？\\要不要聊聊？"
-        },
-        {
-            "role": "user",
             "content": "[2026-05-03 Sunday 21:44:44] 哈喽 "
         },
         {
@@ -39,6 +31,14 @@
         {
             "role": "assistant",
             "content": "嗯~你好呀\\怎么又想起来找我了？"
+        },
+        {
+            "role": "user",
+            "content": "[2026-05-04 Monday 00:30:15] 你在干嘛 "
+        },
+        {
+            "role": "assistant",
+            "content": "刚在刷点东西呢\\你这么晚还醒着啊？\\有什么事吗？"
         }
     ]
 }

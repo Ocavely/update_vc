@@ -184,6 +184,92 @@
         [data-theme="dark"] .theme-toggle::before {
             opacity: 1;
         }
+        /* Toast通知样式 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 400px;
+            animation: toastSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+        }
+        .toast.toast-exit {
+            animation: toastSlideOut 0.3s ease-in forwards;
+        }
+        .toast-success {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .toast-error {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        }
+        .toast-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .toast-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .toast-message {
+            flex: 1;
+            line-height: 1.4;
+        }
+        .toast-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        .toast-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
         .sparkle {
             position: absolute;
             width: 4px;
@@ -765,6 +851,9 @@
     </style>
 </head>
 <body>
+    <!-- Toast通知容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+    
     <div class="header">
         <div class="header-left">
             <div>
@@ -1368,6 +1457,31 @@
         </div>
     </div>
 
+    <!-- 核心记忆编辑弹窗 -->
+    <div class="modal-overlay" id="coreMemoryEditModal">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div class="modal-icon">🧠</div>
+                <div>
+                    <div class="modal-title" id="coreMemoryModalTitle">编辑核心记忆</div>
+                    <div class="modal-subtitle">管理记忆片段</div>
+                </div>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; max-height: 55vh;">
+                <div id="coreMemoryItemsContainer">
+                    <div style="text-align: center; padding: 30px; color: var(--text-muted);">加载中...</div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button onclick="addCoreMemoryItem()" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, #43e97b, #38f9d7); color: white; border: none; cursor: pointer; font-size: 13px;">+ 添加记忆片段</button>
+                </div>
+            </div>
+            <div class="modal-actions" style="padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <button class="modal-btn modal-btn-close" onclick="closeCoreMemoryModal()">取消</button>
+                <button class="modal-btn modal-btn-dismiss" onclick="saveCoreMemoryEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let updateInterval;
 
@@ -1380,6 +1494,36 @@
                 element.appendChild(sparkle);
                 setTimeout(() => sparkle.remove(), 600);
             }
+        }
+
+        // Toast通知系统
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.classList.add('toast-exit'); setTimeout(() => this.parentElement.remove(), 300);">×</button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // 自动移除
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.add('toast-exit');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, duration);
         }
 
         function toggleTheme() {
@@ -1546,30 +1690,132 @@
                 });
         }
 
+        let currentEditingMemoryFilename = '';
+        let currentEditingMemories = [];
+
         function editCoreMemory(filename) {
-            fetch('/api/get_core_memory/' + filename)
+            currentEditingMemoryFilename = filename;
+            const displayName = filename.replace('_core_memory.json', '').replace(/_/g, ' - ');
+            document.getElementById('coreMemoryModalTitle').textContent = '编辑核心记忆 - ' + displayName;
+            
+            fetch('/api/get_core_memory/' + encodeURIComponent(filename))
                 .then(res => res.json())
                 .then(data => {
-                    if (data.content !== undefined) {
-                        const newContent = prompt('编辑核心记忆 - ' + filename.replace('_core_memory.json', ''), data.content);
-                        if (newContent !== null) {
-                            fetch('/api/save_core_memory/' + filename, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({content: newContent})
-                            })
-                            .then(r => r.json())
-                            .then(result => {
-                                if (result.success) {
-                                    alert('已保存');
-                                    showApiKeyModal();
-                                }
-                            });
-                        }
+                    if (data.status === 'success') {
+                        currentEditingMemories = Array.isArray(data.memories) ? data.memories : [];
+                        renderCoreMemoryItems();
+                        document.getElementById('coreMemoryEditModal').classList.add('active');
+                    } else {
+                        showToast('加载失败: ' + (data.error || '未知错误'), 'error');
                     }
+                })
+                .catch(err => {
+                    console.error('加载核心记忆失败:', err);
+                    showToast('加载核心记忆失败', 'error');
                 });
         }
         window.editCoreMemory = editCoreMemory;
+
+        function renderCoreMemoryItems() {
+            const container = document.getElementById('coreMemoryItemsContainer');
+            if (currentEditingMemories.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-muted);">暂无记忆片段，点击下方按钮添加</div>';
+                return;
+            }
+            
+            container.innerHTML = currentEditingMemories.map((memory, idx) => `
+                <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 12px; position: relative;">
+                    <button onclick="removeCoreMemoryItem(${idx})" style="position: absolute; top: 8px; right: 8px; background: rgba(244, 67, 54, 0.2); border: none; color: #f44336; cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 4px;">×</button>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);">时间：</label>
+                        <input type="text" class="memory-timestamp" data-idx="${idx}" value="${memory.timestamp || ''}" placeholder="例如: 2024-01-01 12:00" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 13px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);">摘要：</label>
+                        <textarea class="memory-summary" data-idx="${idx}" placeholder="记忆内容摘要" style="width: 100%; height: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 13px; box-sizing: border-box; resize: vertical;">${memory.summary || ''}</textarea>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary);">重要度 (1-10)：</label>
+                        <input type="number" class="memory-importance" data-idx="${idx}" value="${memory.importance || 5}" min="1" max="10" style="width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 13px; box-sizing: border-box;">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addCoreMemoryItem() {
+            currentEditingMemories.push({
+                timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                summary: '',
+                importance: 5
+            });
+            renderCoreMemoryItems();
+        }
+
+        function removeCoreMemoryItem(idx) {
+            currentEditingMemories.splice(idx, 1);
+            renderCoreMemoryItems();
+        }
+
+        function getCoreMemoryItemsFromUI() {
+            const items = [];
+            document.querySelectorAll('.memory-timestamp').forEach((el, idx) => {
+                const summary = document.querySelector(`.memory-summary[data-idx="${idx}"]`);
+                const importance = document.querySelector(`.memory-importance[data-idx="${idx}"]`);
+                items.push({
+                    timestamp: el.value.trim(),
+                    summary: summary ? summary.value.trim() : '',
+                    importance: importance ? parseInt(importance.value) || 5 : 5
+                });
+            });
+            return items;
+        }
+
+        function saveCoreMemoryEdit() {
+            if (!currentEditingMemoryFilename) {
+                showToast('文件名获取失败', 'error');
+                return;
+            }
+            
+            const memories = getCoreMemoryItemsFromUI();
+            
+            // 验证
+            for (let i = 0; i < memories.length; i++) {
+                if (!memories[i].timestamp || !memories[i].summary) {
+                    showToast(`第${i + 1}个记忆片段的时间或摘要不能为空`, 'warning');
+                    return;
+                }
+                if (memories[i].importance < 1 || memories[i].importance > 10) {
+                    showToast(`第${i + 1}个记忆片段的重要度必须在1-10之间`, 'warning');
+                    return;
+                }
+            }
+            
+            fetch('/api/save_core_memory/' + encodeURIComponent(currentEditingMemoryFilename), {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({memories: memories})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('核心记忆保存成功！', 'success');
+                    closeCoreMemoryModal();
+                    showApiKeyModal();
+                } else {
+                    showToast('保存失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('保存核心记忆失败:', err);
+                showToast('保存失败', 'error');
+            });
+        }
+
+        function closeCoreMemoryModal() {
+            document.getElementById('coreMemoryEditModal').classList.remove('active');
+            currentEditingMemoryFilename = '';
+            currentEditingMemories = [];
+        }
 
         function closeApiKeyModal() {
             const modal = document.getElementById('apiKeyModal');
@@ -1607,11 +1853,11 @@
             const prompt = document.getElementById('newUserPrompt').value;
 
             if (!name) {
-                alert('请输入用户名');
+                showToast('请输入用户名', 'warning');
                 return;
             }
             if (!prompt) {
-                alert('请选择角色');
+                showToast('请选择角色', 'warning');
                 return;
             }
 
@@ -1648,19 +1894,19 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.error) {
-                        alert('添加失败: ' + data.error);
+                        showToast('添加失败: ' + data.error, 'error');
                     } else {
-                        alert('用户已添加');
+                        showToast('用户已添加', 'success');
                         closeAddUserModal();
                         refreshUserInfo();
                     }
                 })
                 .catch(err => {
                     console.error('添加用户失败:', err);
-                    alert('添加用户失败');
+                    showToast('添加用户失败', 'error');
                 });
             } else {
-                alert('用户已添加');
+                showToast('用户已添加', 'success');
                 closeAddUserModal();
             }
         }
@@ -1696,7 +1942,7 @@ function saveApiKey() {
             const maxTyping = parseFloat(document.getElementById('maxTypingInput').value) || 0.05;
 
             if (!apiKey) {
-                alert('请输入API Key');
+                showToast('请输入API Key', 'warning');
                 return;
             }
 
@@ -1863,15 +2109,15 @@ function saveApiKey() {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('用户已删除');
+                    showToast('用户已删除', 'success');
                     refreshUserInfo();
                 } else {
-                    alert('删除失败: ' + (data.error || '未知错误'));
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
                 }
             })
             .catch(err => {
                 console.error('删除用户失败:', err);
-                alert('删除用户失败');
+                showToast('删除用户失败', 'error');
             });
         }
         window.deleteUser = deleteUser;
@@ -1895,9 +2141,9 @@ function saveApiKey() {
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    alert('保存失败: ' + data.error);
+                    showToast('保存失败: ' + data.error, 'error');
                 } else {
-                    alert('用户配置已保存');
+                    showToast('用户配置已保存', 'success');
                 }
 })
             .then(res => {
@@ -1996,13 +2242,14 @@ let lastLogCount = 0;
             .then(data => {
                 if (data.success) {
                     refreshReminders();
+                    showToast('提醒已删除', 'success');
                 } else {
-                    alert('删除失败: ' + (data.error || '未知错误'));
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
                 }
             })
             .catch(err => {
                 console.error('删除提醒失败:', err);
-                alert('删除失败');
+                showToast('删除失败', 'error');
             });
         }
         window.deleteReminder = deleteReminder;
@@ -2069,16 +2316,17 @@ let lastLogCount = 0;
                             .then(res => res.json())
                             .then(data => {
                                 if (data.error) {
-                                    alert(data.error);
+                                    showToast(data.error, 'error');
                                 } else {
                                     refreshBotStatus();
                                     refreshUserInfo();
+                                    showToast('Bot启动成功', 'success');
                                 }
                             });
                     })
                     .catch(err => {
                         console.error('保存配置失败:', err);
-                        alert('保存配置失败，无法启动');
+                        showToast('保存配置失败，无法启动', 'error');
                     });
                 }, 500);
             }
