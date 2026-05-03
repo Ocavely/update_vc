@@ -948,21 +948,116 @@ def save_user_config():
     try:
         data = request.json
         users = data.get('users', [])
-        
+
         if not users:
             return jsonify({'error': '用户列表不能为空'}), 400
-        
+
         # 验证每个用户配置
         for user in users:
             if len(user) != 2 or not user[0] or not user[1]:
                 return jsonify({'error': '用户配置格式错误'}), 400
-        
+
         update_config({'LISTEN_LIST': users})
         app.logger.info(f"用户配置已保存，共 {len(users)} 个用户")
-        
+
         return jsonify({'success': True})
     except Exception as e:
         app.logger.error(f"保存用户配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/delete_user', methods=['POST'])
+def delete_user():
+    """删除指定用户"""
+    try:
+        data = request.json
+        user_name = data.get('user_name', '').strip()
+
+        if not user_name:
+            return jsonify({'error': '用户名不能为空'}), 400
+
+        config = parse_config()
+        listen_list = config.get('LISTEN_LIST', [])
+
+        # 查找要删除的用户
+        user_found = False
+        new_listen_list = []
+        for user in listen_list:
+            if len(user) >= 2:
+                if user[0] == user_name:
+                    user_found = True
+                    app.logger.info(f"删除用户: {user_name}")
+                else:
+                    new_listen_list.append(user)
+
+        if not user_found:
+            return jsonify({'error': f'用户 {user_name} 不存在'}), 404
+
+        update_config({'LISTEN_LIST': new_listen_list})
+        app.logger.info(f"用户 {user_name} 已从列表中删除，剩余 {len(new_listen_list)} 个用户")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"删除用户失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_ai_settings', methods=['POST'])
+def save_ai_settings():
+    """保存AI形象和打断设置"""
+    try:
+        data = request.json
+        user_selfie_description = data.get('user_selfie_description', '').strip()
+        enable_interrupt_reply = data.get('enable_interrupt_reply', True)
+
+        new_values = {
+            'USER_SELFIE_DESCRIPTION': user_selfie_description,
+            'ENABLE_INTERRUPT_REPLY': bool(enable_interrupt_reply)
+        }
+
+        update_config(new_values)
+        app.logger.info(f"AI设置已保存: USER_SELFIE_DESCRIPTION={user_selfie_description}, ENABLE_INTERRUPT_REPLY={enable_interrupt_reply}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存AI设置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai_settings')
+def get_ai_settings():
+    """获取AI形象和打断设置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'user_selfie_description': config.get('USER_SELFIE_DESCRIPTION', ''),
+            'enable_interrupt_reply': config.get('ENABLE_INTERRUPT_REPLY', True)
+        })
+    except Exception as e:
+        app.logger.error(f"获取AI设置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_api_key', methods=['POST'])
+def save_api_key():
+    """保存API Key到save/config，替换所有API_KEY值"""
+    try:
+        data = request.json
+        api_key = data.get('api_key', '').strip()
+
+        if not api_key:
+            return jsonify({'error': 'API Key不能为空'}), 400
+
+        # 更新所有API Key配置
+        new_values = {
+            'DEEPSEEK_API_KEY': api_key,
+            'MOONSHOT_API_KEY': api_key,
+            'ONLINE_API_KEY': api_key,
+            'IMAGE_GENERATION_API_KEY': api_key,
+            'ASSISTANT_API_KEY': api_key
+        }
+
+        update_config(new_values)
+        app.logger.info(f"所有API Key已更新为: {api_key[:10]}...")
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存API Key失败: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/save_all_config', methods=['POST'])
