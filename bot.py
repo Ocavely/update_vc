@@ -188,11 +188,13 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 动态配置获取函数
 def get_dynamic_config(key, default_value=None):
-    """动态从config.py文件获取最新配置值"""
+    """动态从 save/save.config 文件获取最新配置值"""
     try:
-        config_path = os.path.join(root_dir, 'config.py')
+        config_path = os.path.join(root_dir, 'save', 'save.config')
         if not os.path.exists(config_path):
-            return default_value
+            config_path = os.path.join(root_dir, 'config.py')
+            if not os.path.exists(config_path):
+                return default_value
         
         with open(config_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -240,8 +242,18 @@ recurring_reminders = [] # 内存中加载的提醒列表
 recurring_reminder_lock = threading.RLock() # 锁，用于处理提醒文件和列表的读写
 
 active_timers = {} # { (user_id, timer_id): Timer_object } (用于短期一次性提醒 < 10min)
+active_timers_info = [] # {user_id, timer_id, target_time, content, remaining_seconds}
 timer_lock = threading.Lock()
 next_timer_id = 0
+
+def save_short_term_reminders():
+    """将短期提醒保存到JSON文件供dashboard显示"""
+    try:
+        save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'short_term_reminders.json')
+        with open(save_path, 'w', encoding='utf-8') as f:
+            json.dump(active_timers_info, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"保存短期提醒到文件失败: {e}")
 
 # 打断聊天功能
 interrupt_reply_lock = threading.Lock()
@@ -3116,7 +3128,21 @@ def clean_up_temp_files ():
         logger.info(f"目录 wxautox文件下载 不存在，无需删除")
 
 def is_quiet_time():
+    """判断当前是否在安静时间内，使用动态配置"""
+    quiet_start_str = get_dynamic_config('QUIET_TIME_START', '23:00')
+    quiet_end_str = get_dynamic_config('QUIET_TIME_END', '09:00')
+    
+    if not quiet_start_str or not quiet_end_str:
+        return False
+    
+    try:
+        quiet_time_start = datetime.strptime(quiet_start_str, '%H:%M').time()
+        quiet_time_end = datetime.strptime(quiet_end_str, '%H:%M').time()
+    except ValueError:
+        return False
+    
     current_time = datetime.now().time()
+    
     if quiet_time_start <= quiet_time_end:
         return quiet_time_start <= current_time <= quiet_time_end
     else:
@@ -4116,6 +4142,16 @@ D) **非提醒请求**：例如 "今天天气怎么样?", "取消提醒"。
                     timer = Timer(float(delay_seconds), trigger_reminder, args=[user_id, timer_id, reminder_msg])
                     active_timers[timer_key] = timer
                     timer.start()
+                    # 保存到文件供dashboard显示
+                    active_timers_info.append({
+                        'user_id': user_id,
+                        'timer_id': timer_id,
+                        'target_time': confirmation_time_str,
+                        'content': reminder_msg,
+                        'remaining_seconds': delay_seconds,
+                        'set_time': now.strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    save_short_term_reminders()
                     logger.info(f"【短期一次性】提醒定时器 (ID: {timer_id}) 已为用户 {user_id} 成功启动。")
 
                 log_original_message_to_memory(user_id, message_content) # 记录原始请求
@@ -4397,6 +4433,10 @@ def trigger_reminder(user_id, timer_id, reminder_message):
             del active_timers[timer_key]
         else:
              logger.warning(f"触发时未在 active_timers 中找到短期计时器键 {timer_key}。")
+        # 从显示列表中移除
+        global active_timers_info
+        active_timers_info = [t for t in active_timers_info if not (t['user_id'] == user_id and t['timer_id'] == timer_id)]
+        save_short_term_reminders()
 
     if is_quiet_time() and not ALLOW_REMINDERS_IN_QUIET_TIME:
         logger.info(f"当前为安静时间：抑制【短期】提醒 (ID: {timer_id})，用户 {user_id}。")

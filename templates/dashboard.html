@@ -848,6 +848,26 @@
             background: #1a1a2e;
             color: #fff;
         }
+        [data-theme="dark"] .modal-body input[type="text"],
+        [data-theme="dark"] .modal-body input[type="number"],
+        [data-theme="dark"] .modal-body input[type="time"],
+        [data-theme="dark"] .modal-body textarea,
+        [data-theme="dark"] .modal-body select {
+            background: rgba(20, 30, 60, 0.8);
+            color: #fff;
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+        [data-theme="dark"] .modal-body input:focus,
+        [data-theme="dark"] .modal-body textarea:focus,
+        [data-theme="dark"] .modal-body select:focus {
+            background: rgba(30, 40, 80, 0.9);
+            border-color: rgba(102, 126, 234, 0.7);
+            outline: none;
+        }
+        [data-theme="dark"] .modal-body input::placeholder,
+        [data-theme="dark"] .modal-body textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -1337,6 +1357,14 @@
                     </div>
                 </div>
                 
+                <div style="padding: 12px; background: rgba(255, 105, 180, 0.1); border-radius: 8px; border: 1px solid rgba(255, 105, 180, 0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #ff69b4;">💖 情感优化配置</span>
+                        <label class="switch" style="transform: scale(0.7);"><input type="checkbox" id="enableEmotionFixToggle" checked><span class="slider round"></span></label>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-align: left;">启用后AI会根据对话上下文自动优化回复情感，使交互更自然。</div>
+                </div>
+                
                 <div style="padding: 12px; background: rgba(0, 210, 211, 0.1); border-radius: 8px; border: 1px solid rgba(0, 210, 211, 0.2);">
                     <div style="font-size: 13px; font-weight: 600; color: #00d2d3; margin-bottom: 10px;">⌨️ 回复间隔配置</div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-align: left;">⏳ 排队等待时间（秒）：</div>
@@ -1614,6 +1642,7 @@
                 .then(data => {
                     document.getElementById('aiImageInput').value = data.user_selfie_description || '';
                     document.getElementById('interruptToggle').checked = data.enable_interrupt_reply !== false;
+                    document.getElementById('enableEmotionFixToggle').checked = data.enable_emotion_fix !== false;
                 })
                 .catch(err => {
                     console.error('加载AI设置失败:', err);
@@ -1915,6 +1944,7 @@ function saveApiKey() {
             const apiKey = document.getElementById('apiKeyInput').value.trim();
             const aiImage = document.getElementById('aiImageInput').value.trim();
             const interruptEnabled = document.getElementById('interruptToggle').checked;
+            const enableEmotionFix = document.getElementById('enableEmotionFixToggle').checked;
             
             const enableReminders = document.getElementById('enableRemindersToggle').checked;
             const allowRemindersInQuiet = document.getElementById('allowRemindersInQuietToggle').checked;
@@ -1957,6 +1987,7 @@ function saveApiKey() {
                     api_key: apiKey,
                     user_selfie_description: aiImage,
                     enable_interrupt_reply: interruptEnabled,
+                    enable_emotion_fix: enableEmotionFix,
                     ENABLE_REMINDERS: enableReminders,
                     ALLOW_REMINDERS_IN_QUIET_TIME: allowRemindersInQuiet,
                     USE_VOICE_CALL_FOR_REMINDERS: useVoiceCall,
@@ -2200,36 +2231,82 @@ let lastLogCount = 0;
         }
 
         function refreshReminders() {
-            fetch('/get_all_reminders')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('reminderList');
-                    const recurringCount = data.filter(r => r.reminder_type === 'recurring').length;
-                    const oneTimeCount = data.filter(r => r.reminder_type === 'one-off').length;
-                    document.getElementById('recurringCount').textContent = recurringCount;
-                    document.getElementById('oneTimeCount').textContent = oneTimeCount;
-                    if (data.length > 0) {
-                        container.innerHTML = data.map((reminder, index) => {
-                            const isRecurring = reminder.reminder_type === 'recurring';
-                            const timeDisplay = isRecurring ? (reminder.time_str || '--') : (reminder.target_datetime_str ? reminder.target_datetime_str.replace(' ', ' ').substring(0, 16) : '--');
-                            return `
-                                <div style="position: relative; display: flex; flex-direction: column; padding: 10px; background: ${isRecurring ? 'rgba(240, 147, 251, 0.1)' : 'rgba(250, 112, 154, 0.1)'}; border-radius: 8px; border: 1px solid ${isRecurring ? 'rgba(240, 147, 251, 0.2)' : 'rgba(250, 112, 154, 0.2)'};">
-                                    <button onclick="deleteReminder(${index})" style="position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.1); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px;">×</button>
-                                    <div style="font-size: 11px; font-weight: 600; color: ${isRecurring ? '#f093fb' : '#fa709a'};">${isRecurring ? '🔄' : '⏰'} ${reminder.user_id || '未指定用户'}</div>
-                                    <div style="font-size: 12px; color: #fff; margin: 4px 0; word-break: break-all;">${reminder.content || '无内容'}</div>
-                                    <div style="font-size: 10px; color: var(--text-muted);">${timeDisplay}</div>
-                                </div>
-                            `;
-                        }).join('');
-                    } else {
-                        container.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 30px; color: var(--text-muted);">暂无提醒</div>';
-                    }
-                })
+            Promise.all([
+                fetch('/get_all_reminders').then(res => res.json()),
+                fetch('/get_short_term_reminders').then(res => res.json())
+            ])
+            .then(([longTermData, shortTermData]) => {
+                const container = document.getElementById('reminderList');
+                const recurringCount = longTermData.filter(r => r.reminder_type === 'recurring').length;
+                const oneTimeCount = longTermData.filter(r => r.reminder_type === 'one-off').length + shortTermData.length;
+                document.getElementById('recurringCount').textContent = recurringCount;
+                document.getElementById('oneTimeCount').textContent = oneTimeCount;
+                
+                let html = '';
+                // 短期提醒
+                shortTermData.forEach((reminder, index) => {
+                    const mins = Math.floor(reminder.remaining_seconds / 60);
+                    const secs = reminder.remaining_seconds % 60;
+                    const timeDisplay = `${mins}分${secs}秒后`;
+                    html += `
+                        <div style="position: relative; display: flex; flex-direction: column; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 8px; border: 1px solid rgba(79, 172, 254, 0.2);">
+                            <button onclick="deleteShortReminder(${reminder.timer_id}, '${reminder.user_id}')" style="position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.1); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px;">×</button>
+                            <div style="font-size: 11px; font-weight: 600; color: #4facfe;">⚡ 短期提醒 ${reminder.user_id || '未指定用户'}</div>
+                            <div style="font-size: 12px; color: #fff; margin: 4px 0; word-break: break-all;">${reminder.content || '无内容'}</div>
+                            <div style="font-size: 10px; color: var(--text-muted);">${timeDisplay}</div>
+                        </div>
+                    `;
+                });
+                // 长期/循环提醒
+                if (longTermData.length > 0) {
+                    html += longTermData.map((reminder, index) => {
+                        const isRecurring = reminder.reminder_type === 'recurring';
+                        const timeDisplay = isRecurring ? (reminder.time_str || '--') : (reminder.target_datetime_str ? reminder.target_datetime_str.replace(' ', ' ').substring(0, 16) : '--');
+                        return `
+                            <div style="position: relative; display: flex; flex-direction: column; padding: 10px; background: ${isRecurring ? 'rgba(240, 147, 251, 0.1)' : 'rgba(250, 112, 154, 0.1)'}; border-radius: 8px; border: 1px solid ${isRecurring ? 'rgba(240, 147, 251, 0.2)' : 'rgba(250, 112, 154, 0.2)'};">
+                                <button onclick="deleteReminder(${index})" style="position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.1); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px;">×</button>
+                                <div style="font-size: 11px; font-weight: 600; color: ${isRecurring ? '#f093fb' : '#fa709a'};">${isRecurring ? '🔄' : '⏰'} ${reminder.user_id || '未指定用户'}</div>
+                                <div style="font-size: 12px; color: #fff; margin: 4px 0; word-break: break-all;">${reminder.content || '无内容'}</div>
+                                <div style="font-size: 10px; color: var(--text-muted);">${timeDisplay}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                if (html === '') {
+                    container.innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 30px; color: var(--text-muted);">暂无提醒</div>';
+                } else {
+                    container.innerHTML = html;
+                }
+            })
                 .catch(err => {
                     console.error('获取提醒失败:', err);
                     document.getElementById('reminderList').innerHTML = '<div style="grid-column: span 3; text-align: center; padding: 30px; color: var(--text-muted);">加载失败</div>';
                 });
         }
+        
+        function deleteShortReminder(timerId, userId) {
+            if (!confirm('确定要删除这条短期提醒吗？')) return;
+            fetch('/api/cancel_short_reminder', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({timer_id: timerId, user_id: userId})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshReminders();
+                    showToast('短期提醒已删除', 'success');
+                } else {
+                    showToast('删除失败: ' + (data.error || '未知错误'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('删除短期提醒失败:', err);
+                showToast('删除失败', 'error');
+            });
+        }
+        window.deleteShortReminder = deleteShortReminder;
 
         function deleteReminder(index) {
             if (!confirm('确定要删除这条提醒吗？')) return;
@@ -2374,13 +2451,13 @@ let lastLogCount = 0;
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    alert('设置失败: ' + data.error);
+                    showToast('设置失败: ' + data.error, 'error');
                     refreshFeatureSettings();
                 }
             })
             .catch(err => {
                 console.error('设置功能失败:', err);
-                alert('设置失败');
+                showToast('设置失败', 'error');
                 refreshFeatureSettings();
             });
         }
@@ -2388,7 +2465,7 @@ let lastLogCount = 0;
         function updateEmojiProb(value) {
             const prob = parseInt(value);
             if (prob < 0 || prob > 100) {
-                alert('请输入0-100之间的数值');
+                showToast('请输入0-100之间的数值', 'warning');
                 refreshFeatureSettings();
                 return;
             }
@@ -2400,7 +2477,7 @@ let lastLogCount = 0;
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    alert('设置失败: ' + data.error);
+                    showToast('设置失败: ' + data.error, 'error');
                 }
             })
             .catch(err => {
@@ -2517,14 +2594,14 @@ let lastLogCount = 0;
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    alert('保存失败: ' + data.error);
+                    showToast('保存失败: ' + data.error, 'error');
                 } else {
-                    alert('用户配置已保存');
+                    showToast('用户配置已保存', 'success');
                 }
             })
             .catch(err => {
                 console.error('保存用户配置失败:', err);
-                alert('保存失败');
+                showToast('保存失败', 'error');
             });
         }
 
@@ -2596,7 +2673,7 @@ let lastLogCount = 0;
             const content = document.getElementById('new-prompt-content').value;
             
             if (!filename) {
-                alert('文件名不能为空！');
+                showToast('文件名不能为空！', 'warning');
                 return;
             }
             
@@ -2613,12 +2690,12 @@ let lastLogCount = 0;
                 }
             })
             .then(data => {
-                alert('人设创建成功！');
+                showToast('人设创建成功！', 'success');
                 loadPromptList();
                 cancelCreatePrompt();
             })
             .catch(err => {
-                alert('创建失败: ' + err.message);
+                showToast('创建失败: ' + err.message, 'error');
             });
         }
 
@@ -2644,7 +2721,7 @@ let lastLogCount = 0;
                 document.getElementById('edit-prompt-view').style.display = 'block';
             })
             .catch(err => {
-                alert('获取人设内容失败: ' + err.message);
+                showToast('获取人设内容失败: ' + err.message, 'error');
             });
         }
 
@@ -2660,7 +2737,7 @@ let lastLogCount = 0;
             const originalFilename = document.getElementById('edit-prompt-view').dataset.originalFilename;
             
             if (!filename) {
-                alert('文件名不能为空！');
+                showToast('文件名不能为空！', 'warning');
                 return;
             }
             
@@ -2677,12 +2754,12 @@ let lastLogCount = 0;
                 }
             })
             .then(data => {
-                alert('人设保存成功！');
+                showToast('人设保存成功！', 'success');
                 loadPromptList();
                 cancelEditPrompt();
             })
             .catch(err => {
-                alert('保存失败: ' + err.message);
+                showToast('保存失败: ' + err.message, 'error');
             });
         }
 
@@ -2695,21 +2772,21 @@ let lastLogCount = 0;
             })
             .then(res => {
                 if (res.ok) {
-                    alert('删除成功！');
+                    showToast('删除成功！', 'success');
                     loadPromptList();
                 } else {
                     return res.text().then(text => { throw new Error(text); });
                 }
             })
             .catch(err => {
-                alert('删除失败: ' + err.message);
+                showToast('删除失败: ' + err.message, 'error');
             });
         }
 
         function generatePrompt() {
             const userInput = document.getElementById('promptInput').value;
             if (!userInput) {
-                alert('请输入生成需求！');
+                showToast('请输入生成需求！', 'warning');
                 return;
             }
             
@@ -2756,7 +2833,7 @@ let lastLogCount = 0;
                 document.getElementById('create-word-counter').textContent = finalContent.length + ' 字';
             })
             .catch(err => {
-                alert(err.message);
+                showToast(err.message, 'error');
             })
             .finally(() => {
                 generateBtn.disabled = false;

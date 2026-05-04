@@ -24,7 +24,7 @@ MAX_GROUPS = 5
 
 # 打断聊天功能
 # 开启后，如果AI正在回复用户上条消息时用户发送了新消息，将打断当前回复，进行新消息的思考和回复
-ENABLE_INTERRUPT_REPLY = True
+ENABLE_INTERRUPT_REPLY = False
 
 # 如果要使用官方的API
 # DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
@@ -60,7 +60,7 @@ ENABLE_AUTO_MESSAGE = True
 MIN_COUNTDOWN_HOURS = 0.5
 MAX_COUNTDOWN_HOURS = 1.0
 # 消息发送时间限制
-QUIET_TIME_START = '11:00'
+QUIET_TIME_START = '23:00'
 QUIET_TIME_END = '9:00'
 # 不对群聊发送自动消息
 IGNORE_GROUP_CHAT_FOR_AUTO_MESSAGE = False

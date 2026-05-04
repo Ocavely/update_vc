@@ -1028,7 +1028,8 @@ def get_ai_settings():
         config = parse_config()
         return jsonify({
             'user_selfie_description': config.get('USER_SELFIE_DESCRIPTION', ''),
-            'enable_interrupt_reply': config.get('ENABLE_INTERRUPT_REPLY', True)
+            'enable_interrupt_reply': config.get('ENABLE_INTERRUPT_REPLY', True),
+            'enable_emotion_fix': config.get('ENABLE_EMOTION_FIX', True)
         })
     except Exception as e:
         app.logger.error(f"获取AI设置失败: {e}")
@@ -1205,6 +1206,8 @@ def save_all_advanced_config():
             new_values['USER_SELFIE_DESCRIPTION'] = data['user_selfie_description']
         if 'enable_interrupt_reply' in data:
             new_values['ENABLE_INTERRUPT_REPLY'] = bool(data['enable_interrupt_reply'])
+        if 'enable_emotion_fix' in data:
+            new_values['ENABLE_EMOTION_FIX'] = bool(data['enable_emotion_fix'])
         
         # 定时器配置
         if 'ENABLE_REMINDERS' in data:
@@ -2320,6 +2323,29 @@ def get_all_reminders():
         app.logger.error(f"获取所有提醒失败: {str(e)}")
         return jsonify({'error': f'获取所有提醒失败: {str(e)}'}), 500
 
+@app.route('/get_short_term_reminders')
+@login_required
+def get_short_term_reminders():
+    """获取短期一次性提醒（<10分钟）"""
+    try:
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'short_term_reminders.json')
+        if not os.path.exists(json_path):
+            return jsonify([])
+        
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if not isinstance(data, list):
+            return jsonify([])
+        
+        return jsonify(data)
+    except json.JSONDecodeError:
+        app.logger.error(f"文件 short_term_reminders.json 格式错误，无法解析。")
+        return jsonify([])
+    except Exception as e:
+        app.logger.error(f"获取短期提醒失败: {str(e)}")
+        return jsonify({'error': f'获取短期提醒失败: {str(e)}'}), 500
+
 
 # 删除单个提醒
 @app.route('/delete_reminder', methods=['POST'])
@@ -2348,6 +2374,35 @@ def delete_reminder():
             json.dump(reminders, f, ensure_ascii=False, indent=2)
         
         return jsonify({'success': True, 'deleted': deleted})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cancel_short_reminder', methods=['POST'])
+@login_required
+def cancel_short_reminder():
+    """取消短期提醒（从显示列表中移除）"""
+    try:
+        data = request.get_json()
+        timer_id = data.get('timer_id')
+        user_id = data.get('user_id')
+        
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'short_term_reminders.json')
+        if not os.path.exists(json_path):
+            return jsonify({'error': '短期提醒文件不存在'}), 404
+        
+        with open(json_path, 'r', encoding='utf-8') as f:
+            reminders = json.load(f)
+        
+        if not isinstance(reminders, list):
+            return jsonify({'error': '数据格式错误'}), 400
+        
+        # 移除匹配的提醒
+        reminders = [r for r in reminders if not (r.get('timer_id') == timer_id and r.get('user_id') == user_id)]
+        
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(reminders, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
