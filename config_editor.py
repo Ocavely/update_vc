@@ -883,8 +883,8 @@ def get_feature_settings():
     try:
         config = parse_config()
         return jsonify({
+            'ENABLE_GPT_SOVITS_TTS': config.get('ENABLE_GPT_SOVITS_TTS', True),
             'ENABLE_IMAGE_RECOGNITION': config.get('ENABLE_IMAGE_RECOGNITION', True),
-            'ENABLE_ASSISTANT_MODEL': config.get('ENABLE_ASSISTANT_MODEL', True),
             'ENABLE_IMAGE_GENERATION': config.get('ENABLE_IMAGE_GENERATION', True),
             'ENABLE_ONLINE_API': config.get('ENABLE_ONLINE_API', True),
             'EMOJI_SENDING_PROBABILITY': config.get('EMOJI_SENDING_PROBABILITY', 20),
@@ -967,6 +967,84 @@ def update_active_image_prob():
         return jsonify({'success': True})
     except Exception as e:
         app.logger.error(f"更新概率失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/model_configs')
+def get_model_configs():
+    """获取模型配置"""
+    try:
+        config = parse_config()
+        return jsonify({
+            'MODEL': config.get('MODEL', 'gpt-4.1-mini'),
+            'IMAGE_GENERATION_MODEL': config.get('IMAGE_GENERATION_MODEL', 'gpt-image-2'),
+            'ONLINE_MODEL': config.get('ONLINE_MODEL', 'net-gpt-4o-mini'),
+            'MOONSHOT_MODEL': config.get('MOONSHOT_MODEL', 'gpt-4o-mini')
+        })
+    except Exception as e:
+        app.logger.error(f"获取模型配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update_model_config', methods=['POST'])
+def update_model_config():
+    """更新模型配置"""
+    try:
+        data = request.json
+        key = data.get('key')
+        value = data.get('value')
+
+        if not key or not value:
+            return jsonify({'error': '参数不完整'}), 400
+
+        valid_keys = ['MODEL', 'IMAGE_GENERATION_MODEL', 'ONLINE_MODEL', 'MOONSHOT_MODEL']
+        if key not in valid_keys:
+            return jsonify({'error': f'无效的配置键: {key}'}), 400
+
+        update_config({key: value})
+        app.logger.info(f"模型配置 {key} 已更新为 {value}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"更新模型配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/section_configs')
+def get_section_configs():
+    """获取某个功能模块的完整配置"""
+    try:
+        section = request.args.get('section', 'chat')
+        config = parse_config()
+        result = {}
+        if section == 'chat':
+            for key in ['DEEPSEEK_BASE_URL', 'MODEL', 'MAX_TOKEN', 'TEMPERATURE', 'REMOVE_PARENTHESES', 'ENABLE_INTERRUPT_REPLY', 'ENABLE_ASSISTANT_MODEL', 'ASSISTANT_BASE_URL', 'ASSISTANT_MODEL', 'ASSISTANT_MAX_TOKEN', 'ASSISTANT_TEMPERATURE', 'USE_ASSISTANT_FOR_MEMORY_SUMMARY', 'ENABLE_ASSISTANT_CUSTOM_PROMPT', 'ASSISTANT_CUSTOM_PROMPT']:
+                result[key] = config.get(key)
+        elif section == 'image':
+            for key in ['ENABLE_IMAGE_GENERATION', 'USE_ASSISTANT_FOR_IMAGE_GENERATION', 'IMAGE_DETECTION_USE_ASSISTANT', 'IMAGE_GENERATION_KEYWORD', 'ENABLE_SELFIE_MODE', 'SELFIE_KEYWORD', 'USER_SELFIE_DESCRIPTION', 'IMAGE_GENERATION_BASE_URL', 'IMAGE_GENERATION_MODEL', 'IMAGE_GENERATION_SIZE', 'IMAGE_GENERATION_N']:
+                result[key] = config.get(key)
+        elif section == 'online':
+            for key in ['ENABLE_ONLINE_API', 'ONLINE_BASE_URL', 'ONLINE_MODEL', 'ONLINE_API_TEMPERATURE', 'ONLINE_API_MAX_TOKEN', 'SEARCH_DETECTION_PROMPT', 'ONLINE_FIXED_PROMPT']:
+                result[key] = config.get(key)
+        elif section == 'recognition':
+            for key in ['ENABLE_IMAGE_RECOGNITION', 'ENABLE_EMOJI_RECOGNITION', 'MOONSHOT_BASE_URL', 'MOONSHOT_MODEL', 'MOONSHOT_API_KEY', 'MOONSHOT_TEMPERATURE']:
+                result[key] = config.get(key)
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"获取模块配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/save_section_config', methods=['POST'])
+def save_section_config():
+    """保存某个功能模块的完整配置"""
+    try:
+        data = request.json
+        section = data.get('section')
+        config = data.get('config', {})
+        if not section or not config:
+            return jsonify({'error': '参数不完整'}), 400
+        update_config(config)
+        app.logger.info(f"模块 {section} 配置已保存: {list(config.keys())}")
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"保存模块配置失败: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/save_user_config', methods=['POST'])

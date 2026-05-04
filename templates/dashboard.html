@@ -1006,33 +1006,36 @@
                 <div class="card-header" style="margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-color);">
                     <div class="card-icon" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">⚙️</div>
                     <div class="card-title">功能开关</div>
+                    <div style="margin-left: auto; display: flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 10px; color: var(--text-muted);">🔊</span>
+                        <label class="switch" style="transform: scale(0.5); margin: 0;"><input type="checkbox" id="enableGptSovitsTts" checked onchange="toggleFeature('ENABLE_GPT_SOVITS_TTS', this.checked)"><span class="slider round"></span></label>
+                    </div>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(67, 233, 123, 0.1); border-radius: 8px; border: 1px solid rgba(67, 233, 123, 0.2); position: relative;" onmouseenter="showTooltip('tooltip-img-voice')" onmouseleave="hideTooltip('tooltip-img-voice')">
-                        <span style="font-size: 12px;">🖼️ 图片/语音</span>
-                        <div id="tooltip-img-voice" style="display: none; position: absolute; left: 10px; bottom: calc(100% + 8px); background: #1a1a2e; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11px; white-space: nowrap; z-index: 100; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">语音功能调用gpt-sovits，不支持联网模型，如有需求请自行配置。</div>
-                        <label class="switch" style="transform: scale(0.7);"><input type="checkbox" id="enableImageRecognition" checked onchange="toggleFeature('ENABLE_IMAGE_RECOGNITION', this.checked)"><span class="slider round"></span></label>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 8px; border: 1px solid rgba(79, 172, 254, 0.2);">
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; flex: 1;">
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 8px; border: 1px solid rgba(79, 172, 254, 0.2); cursor: pointer;" onclick="openModelModal('chat')">
                         <span style="font-size: 12px;">🤖 Chat模型</span>
-                        <label class="switch" style="transform: scale(0.7);"><input type="checkbox" id="enableAssistantModel" checked onchange="toggleFeature('ENABLE_ASSISTANT_MODEL', this.checked)"><span class="slider round"></span></label>
+                        <span style="font-size: 10px; color: var(--text-muted);" id="chatModelLabel">gpt-4.1-mini</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(240, 147, 251, 0.1); border-radius: 8px; border: 1px solid rgba(240, 147, 251, 0.2);">
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 8px; border: 1px solid rgba(79, 172, 254, 0.2); cursor: pointer;" onclick="openModelModal('recognition')">
+                        <span style="font-size: 12px;">🖼️ 图片识别</span>
+                        <span style="font-size: 10px; color: var(--text-muted);" id="recognitionModelLabel">gpt-4o-mini</span>
+                    </div>
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(240, 147, 251, 0.1); border-radius: 8px; border: 1px solid rgba(240, 147, 251, 0.2); cursor: pointer;" onclick="openModelModal('image')">
                         <span style="font-size: 12px;">🎨 图片生成</span>
-                        <label class="switch" style="transform: scale(0.7);"><input type="checkbox" id="enableImageGeneration" checked onchange="toggleFeature('ENABLE_IMAGE_GENERATION', this.checked)"><span class="slider round"></span></label>
+                        <span style="font-size: 10px; color: var(--text-muted);" id="imageModelLabel">gpt-image-2</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(250, 112, 154, 0.1); border-radius: 8px; border: 1px solid rgba(250, 112, 154, 0.2);">
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(250, 112, 154, 0.1); border-radius: 8px; border: 1px solid rgba(250, 112, 154, 0.2); cursor: pointer;" onclick="openModelModal('online')">
                         <span style="font-size: 12px;">🌐 联网搜索</span>
-                        <label class="switch" style="transform: scale(0.7);"><input type="checkbox" id="enableOnlineApi" checked onchange="toggleFeature('ENABLE_ONLINE_API', this.checked)"><span class="slider round"></span></label>
+                        <span style="font-size: 10px; color: var(--text-muted);" id="onlineModelLabel">net-gpt-4o-mini</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.2);">
                         <span style="font-size: 12px;">😊 主动表情概率</span>
                         <div class="prob-inline">
                             <input type="number" id="emojiProbability" min="0" max="100" value="20" style="width: 44px; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 11px;" onchange="updateEmojiProb(this.value)">
                             <span style="font-size: 11px;">%</span>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(240, 147, 251, 0.1); border-radius: 8px; border: 1px solid rgba(240, 147, 251, 0.2);">
+                    <div style="flex: 1; min-width: 180px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(240, 147, 251, 0.1); border-radius: 8px; border: 1px solid rgba(240, 147, 251, 0.2);">
                         <span style="font-size: 12px;">🎨 主动图片概率</span>
                         <div class="prob-inline">
                             <input type="number" id="activeImageProbability" min="0" max="100" value="50" style="width: 44px; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 11px;" onchange="updateActiveImageProb(this.value)">
@@ -1513,6 +1516,24 @@
             <div class="modal-actions" style="padding-top: 15px; border-top: 1px solid var(--border-color);">
                 <button class="modal-btn modal-btn-close" onclick="closeCoreMemoryModal()">取消</button>
                 <button class="modal-btn modal-btn-dismiss" onclick="saveCoreMemoryEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modelModal">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div class="modal-icon" id="modelModalIcon">🤖</div>
+                <div>
+                    <div class="modal-title" id="modelModalTitle">修改模型</div>
+                    <div class="modal-subtitle" id="modelModalSubtitle">修改使用的模型名称</div>
+                </div>
+            </div>
+            <div class="modal-body" id="modelModalBody" style="flex: 1; overflow-y: auto; max-height: 60vh; text-align: left; display: flex; flex-direction: column; gap: 12px;">
+            </div>
+            <div class="modal-actions" style="padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <button class="modal-btn modal-btn-close" onclick="closeModelModal()">取消</button>
+                <button class="modal-btn modal-btn-dismiss" onclick="saveModelConfig()">保存</button>
             </div>
         </div>
     </div>
@@ -2387,10 +2408,10 @@ let lastLogCount = 0;
                             headers: {'Content-Type': 'application/json'},
                             cache: 'no-store',
                             body: JSON.stringify({
-                                'ENABLE_IMAGE_RECOGNITION': document.getElementById('enableImageRecognition').checked,
-                                'ENABLE_ASSISTANT_MODEL': document.getElementById('enableAssistantModel').checked,
-                                'ENABLE_IMAGE_GENERATION': document.getElementById('enableImageGeneration').checked,
-                                'ENABLE_ONLINE_API': document.getElementById('enableOnlineApi').checked,
+                                'ENABLE_GPT_SOVITS_TTS': document.getElementById('enableGptSovitsTts').checked,
+                                'ENABLE_IMAGE_RECOGNITION': document.getElementById('cfg_ENABLE_IMAGE_RECOGNITION') ? document.getElementById('cfg_ENABLE_IMAGE_RECOGNITION').checked : true,
+                                'ENABLE_IMAGE_GENERATION': document.getElementById('cfg_ENABLE_IMAGE_GENERATION') ? document.getElementById('cfg_ENABLE_IMAGE_GENERATION').checked : true,
+                                'ENABLE_ONLINE_API': document.getElementById('cfg_ENABLE_ONLINE_API') ? document.getElementById('cfg_ENABLE_ONLINE_API').checked : true,
                                 'EMOJI_SENDING_PROBABILITY': parseInt(document.getElementById('emojiProbability').value) || 20,
                                 'ACTIVE_IMAGE_PROBABILITY': parseInt(document.getElementById('activeImageProbability').value) || 50
                             })
@@ -2424,7 +2445,7 @@ let lastLogCount = 0;
         checkWeChat();
         refreshSystemInfo();
         refreshUserInfo();
-        refreshLogs(true);  // 首次加载时清除旧日志
+        refreshLogs(false);  // 首次加载不清除日志
         refreshReminders();
         
         setInterval(refreshBotStatus, 5000);
@@ -2439,10 +2460,14 @@ let lastLogCount = 0;
             fetch('/api/feature_settings')
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('enableImageRecognition').checked = data.ENABLE_IMAGE_RECOGNITION;
-                    document.getElementById('enableAssistantModel').checked = data.ENABLE_ASSISTANT_MODEL;
-                    document.getElementById('enableImageGeneration').checked = data.ENABLE_IMAGE_GENERATION;
-                    document.getElementById('enableOnlineApi').checked = data.ENABLE_ONLINE_API;
+                    document.getElementById('enableGptSovitsTts').checked = data.ENABLE_GPT_SOVITS_TTS;
+                    var el;
+                    el = document.getElementById('cfg_ENABLE_IMAGE_RECOGNITION');
+                    if (el) el.checked = data.ENABLE_IMAGE_RECOGNITION;
+                    el = document.getElementById('cfg_ENABLE_IMAGE_GENERATION');
+                    if (el) el.checked = data.ENABLE_IMAGE_GENERATION;
+                    el = document.getElementById('cfg_ENABLE_ONLINE_API');
+                    if (el) el.checked = data.ENABLE_ONLINE_API;
                     document.getElementById('emojiProbability').value = data.EMOJI_SENDING_PROBABILITY || 20;
                     document.getElementById('activeImageProbability').value = data.ACTIVE_IMAGE_PROBABILITY || 50;
                 })
@@ -2518,6 +2543,7 @@ let lastLogCount = 0;
         }
         
         refreshFeatureSettings();
+        refreshModelLabels();
         
         function loadUpdateLog() {
             fetch('/api/update_log')
@@ -2598,9 +2624,342 @@ let lastLogCount = 0;
         }
 
         function checkAndShowModal() {
-            // 通过 loadModalLog 返回内容来判断是否显示弹窗
-            // 如果返回内容为空，则不显示弹窗
+            // 只在第一次打开时弹出弹窗，刷新页面不弹出
+            if (sessionStorage.getItem('modalShown')) {
+                return;
+            }
+            sessionStorage.setItem('modalShown', 'true');
             loadModalLog();
+        }
+
+        var currentModalType = null;
+
+        function buildChatForm(config) {
+            return `
+                <h3 style="margin: 0 0 8px; font-size: 15px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">主模型配置</h3>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">API 服务商</label>
+                    <select id="cfg_DEEPSEEK_BASE_URL" onchange="toggleCustomUrl('DEEPSEEK_BASE_URL')" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">
+                        <option value="https://api.siliconflow.cn/v1/" ${config.DEEPSEEK_BASE_URL === 'https://api.siliconflow.cn/v1/' ? 'selected' : ''}>硅基流动</option>
+                        <option value="https://api.deepseek.com" ${config.DEEPSEEK_BASE_URL === 'https://api.deepseek.com' ? 'selected' : ''}>DeepSeek官方API</option>
+                        <option value="https://vg.v1api.cc/v1" ${config.DEEPSEEK_BASE_URL === 'https://vg.v1api.cc/v1' ? 'selected' : ''}>WeAPIs</option>
+                        <option value="other" ${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.DEEPSEEK_BASE_URL) ? 'selected' : ''}>其它</option>
+                    </select>
+                    <input type="text" id="custom_DEEPSEEK_BASE_URL" placeholder="请输入自定义API地址" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box; margin-top: 4px; display:${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.DEEPSEEK_BASE_URL) ? 'block' : 'none'};" value="${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.DEEPSEEK_BASE_URL) ? config.DEEPSEEK_BASE_URL : ''}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">模型选择</label>
+                    <input type="text" id="cfg_MODEL" placeholder="请输入模型名称" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.MODEL || 'gpt-4.1-mini'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">API Key</label>
+                    <input type="text" id="cfg_DEEPSEEK_API_KEY" placeholder="sk-xxxxxxxxxx" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.DEEPSEEK_API_KEY || ''}">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">最大Token</label>
+                        <input type="number" id="cfg_MAX_TOKEN" step="100" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.MAX_TOKEN || 5000}">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">温度 (0-2)</label>
+                        <input type="number" id="cfg_TEMPERATURE" step="0.1" min="0" max="2" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.TEMPERATURE || 1.1}">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                        <input type="checkbox" id="cfg_REMOVE_PARENTHESES" ${config.REMOVE_PARENTHESES ? 'checked' : ''}>
+                        <label for="cfg_REMOVE_PARENTHESES" style="font-size: 11px; cursor: pointer;">强制移除括号内容</label>
+                    </div>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                        <input type="checkbox" id="cfg_ENABLE_INTERRUPT_REPLY" ${config.ENABLE_INTERRUPT_REPLY ? 'checked' : ''}>
+                        <label for="cfg_ENABLE_INTERRUPT_REPLY" style="font-size: 11px; cursor: pointer;">打断聊天</label>
+                    </div>
+                </div>
+                <h3 style="margin: 8px 0; font-size: 15px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">辅助模型配置</h3>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_ASSISTANT_MODEL" ${config.ENABLE_ASSISTANT_MODEL ? 'checked' : ''} onchange="toggleAssistantFields()">
+                    <label for="cfg_ENABLE_ASSISTANT_MODEL" style="font-size: 11px; cursor: pointer;">启用辅助模型</label>
+                </div>
+                <div id="assistantFields" style="display:${config.ENABLE_ASSISTANT_MODEL ? 'block' : 'none'};">
+                    <div>
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">辅助模型API服务商</label>
+                        <select id="cfg_ASSISTANT_BASE_URL" onchange="toggleCustomUrl('ASSISTANT_BASE_URL')" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">
+                            <option value="https://api.siliconflow.cn/v1/" ${config.ASSISTANT_BASE_URL === 'https://api.siliconflow.cn/v1/' ? 'selected' : ''}>硅基流动</option>
+                            <option value="https://api.deepseek.com" ${config.ASSISTANT_BASE_URL === 'https://api.deepseek.com' ? 'selected' : ''}>DeepSeek官方API</option>
+                            <option value="https://vg.v1api.cc/v1" ${config.ASSISTANT_BASE_URL === 'https://vg.v1api.cc/v1' ? 'selected' : ''}>WeAPIs</option>
+                            <option value="other" ${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.ASSISTANT_BASE_URL) ? 'selected' : ''}>其它</option>
+                        </select>
+                        <input type="text" id="custom_ASSISTANT_BASE_URL" placeholder="请输入自定义API地址" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box; margin-top: 4px; display:${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.ASSISTANT_BASE_URL) ? 'block' : 'none'};" value="${!['https://api.siliconflow.cn/v1/', 'https://api.deepseek.com', 'https://vg.v1api.cc/v1'].includes(config.ASSISTANT_BASE_URL) ? config.ASSISTANT_BASE_URL : ''}">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">辅助模型</label>
+                        <input type="text" id="cfg_ASSISTANT_MODEL" placeholder="推荐gpt-4o-mini" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ASSISTANT_MODEL || 'gpt-3.5-turbo'}">
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">辅助模型最大Token</label>
+                            <input type="number" id="cfg_ASSISTANT_MAX_TOKEN" step="100" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ASSISTANT_MAX_TOKEN || 1000}">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">辅助模型温度 (0-2)</label>
+                            <input type="number" id="cfg_ASSISTANT_TEMPERATURE" step="0.1" min="0" max="2" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ASSISTANT_TEMPERATURE || 0.3}">
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                        <input type="checkbox" id="cfg_USE_ASSISTANT_FOR_MEMORY_SUMMARY" ${config.USE_ASSISTANT_FOR_MEMORY_SUMMARY ? 'checked' : ''}>
+                        <label for="cfg_USE_ASSISTANT_FOR_MEMORY_SUMMARY" style="font-size: 11px; cursor: pointer;">使用辅助模型进行记忆总结</label>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildImageForm(config) {
+            return `
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_IMAGE_GENERATION" ${config.ENABLE_IMAGE_GENERATION ? 'checked' : ''}>
+                    <label for="cfg_ENABLE_IMAGE_GENERATION" style="font-size: 11px; cursor: pointer;">启用图片生成功能</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_USE_ASSISTANT_FOR_IMAGE_GENERATION" ${config.USE_ASSISTANT_FOR_IMAGE_GENERATION ? 'checked' : ''}>
+                    <label for="cfg_USE_ASSISTANT_FOR_IMAGE_GENERATION" style="font-size: 11px; cursor: pointer;">使用辅助模型判断画图意图</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_IMAGE_DETECTION_USE_ASSISTANT" ${config.IMAGE_DETECTION_USE_ASSISTANT ? 'checked' : ''}>
+                    <label for="cfg_IMAGE_DETECTION_USE_ASSISTANT" style="font-size: 11px; cursor: pointer;">画图检测使用辅助模型</label>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">触发关键词</label>
+                    <input type="text" id="cfg_IMAGE_GENERATION_KEYWORD" placeholder="画/生成" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.IMAGE_GENERATION_KEYWORD || '画/生成'}">
+                </div>
+                <h3 style="margin: 8px 0; font-size: 14px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">自拍模式</h3>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_SELFIE_MODE" ${config.ENABLE_SELFIE_MODE ? 'checked' : ''}>
+                    <label for="cfg_ENABLE_SELFIE_MODE" style="font-size: 11px; cursor: pointer;">开启自拍模式</label>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">触发自拍关键词</label>
+                    <input type="text" id="cfg_SELFIE_KEYWORD" placeholder="自拍/我的照片" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.SELFIE_KEYWORD || '自拍/你照片/你的照片'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">AI形象描述</label>
+                    <textarea id="cfg_USER_SELFIE_DESCRIPTION" rows="2" placeholder="形容AI的形象描述" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">${config.USER_SELFIE_DESCRIPTION || ''}</textarea>
+                </div>
+                <h3 style="margin: 8px 0; font-size: 14px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">图片生成API配置</h3>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">图片生成API地址</label>
+                    <input type="text" id="cfg_IMAGE_GENERATION_BASE_URL" placeholder="https://api.gptgod.online" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.IMAGE_GENERATION_BASE_URL || 'https://api.gptgod.online'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">图片生成模型</label>
+                    <input type="text" id="cfg_IMAGE_GENERATION_MODEL" placeholder="gpt-4o-image" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.IMAGE_GENERATION_MODEL || 'gpt-image-2'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">API Key</label>
+                    <input type="text" id="cfg_IMAGE_GENERATION_API_KEY" placeholder="sk-xxxxxxxxxx" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.IMAGE_GENERATION_API_KEY || ''}">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">图片尺寸</label>
+                        <select id="cfg_IMAGE_GENERATION_SIZE" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">
+                            <option value="256x256" ${config.IMAGE_GENERATION_SIZE === '256x256' ? 'selected' : ''}>256x256</option>
+                            <option value="512x512" ${config.IMAGE_GENERATION_SIZE === '512x512' ? 'selected' : ''}>512x512</option>
+                            <option value="1024x1024" ${config.IMAGE_GENERATION_SIZE === '1024x1024' ? 'selected' : ''}>1024x1024</option>
+                            <option value="1792x1024" ${config.IMAGE_GENERATION_SIZE === '1792x1024' ? 'selected' : ''}>1792x1024</option>
+                            <option value="1024x1792" ${config.IMAGE_GENERATION_SIZE === '1024x1792' ? 'selected' : ''}>1024x1792</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">生成数量 (1-10)</label>
+                        <input type="number" id="cfg_IMAGE_GENERATION_N" min="1" max="10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.IMAGE_GENERATION_N || 1}">
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildRecognitionForm(config) {
+            return `
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_IMAGE_RECOGNITION" ${config.ENABLE_IMAGE_RECOGNITION ? 'checked' : ''}>
+                    <label for="cfg_ENABLE_IMAGE_RECOGNITION" style="font-size: 11px; cursor: pointer;">启用图片识别功能</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_EMOJI_RECOGNITION" ${config.ENABLE_EMOJI_RECOGNITION ? 'checked' : ''}>
+                    <label for="cfg_ENABLE_EMOJI_RECOGNITION" style="font-size: 11px; cursor: pointer;">启用表情包识别功能</label>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">图像识别API服务商</label>
+                    <select id="cfg_MOONSHOT_BASE_URL" onchange="toggleCustomUrl('MOONSHOT_BASE_URL')" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">
+                        <option value="https://api.moonshot.cn/v1" ${config.MOONSHOT_BASE_URL === 'https://api.moonshot.cn/v1' ? 'selected' : ''}>MOONSHOT月之暗面</option>
+                        <option value="https://vg.v1api.cc/v1" ${config.MOONSHOT_BASE_URL === 'https://vg.v1api.cc/v1' ? 'selected' : ''}>WeAPIs</option>
+                        <option value="other" ${!['https://api.moonshot.cn/v1', 'https://vg.v1api.cc/v1'].includes(config.MOONSHOT_BASE_URL) ? 'selected' : ''}>其它</option>
+                    </select>
+                    <input type="text" id="custom_MOONSHOT_BASE_URL" placeholder="请输入自定义API地址" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box; margin-top: 4px; display:${!['https://api.moonshot.cn/v1', 'https://vg.v1api.cc/v1'].includes(config.MOONSHOT_BASE_URL) ? 'block' : 'none'};" value="${!['https://api.moonshot.cn/v1', 'https://vg.v1api.cc/v1'].includes(config.MOONSHOT_BASE_URL) ? config.MOONSHOT_BASE_URL : ''}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">识图模型</label>
+                    <input type="text" id="cfg_MOONSHOT_MODEL" placeholder="gpt-4o-mini" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.MOONSHOT_MODEL || 'gpt-4o-mini'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">API Key</label>
+                    <input type="text" id="cfg_MOONSHOT_API_KEY" placeholder="sk-xxxxxxxxxx" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">温度 (0-1)</label>
+                    <input type="number" id="cfg_MOONSHOT_TEMPERATURE" step="0.1" min="0" max="1" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.MOONSHOT_TEMPERATURE || 0.8}">
+                </div>
+            `;
+        }
+
+        function buildOnlineForm(config) {
+            return `
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px; background: rgba(102, 126, 234, 0.05); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.1);">
+                    <input type="checkbox" id="cfg_ENABLE_ONLINE_API" ${config.ENABLE_ONLINE_API ? 'checked' : ''}>
+                    <label for="cfg_ENABLE_ONLINE_API" style="font-size: 11px; cursor: pointer;">启用联网搜索功能</label>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">联网API服务商</label>
+                    <select id="cfg_ONLINE_BASE_URL" onchange="toggleCustomUrl('ONLINE_BASE_URL')" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;">
+                        <option value="https://vg.v1api.cc/v1" ${config.ONLINE_BASE_URL === 'https://vg.v1api.cc/v1' ? 'selected' : ''}>WeAPIs</option>
+                        <option value="other" ${config.ONLINE_BASE_URL !== 'https://vg.v1api.cc/v1' ? 'selected' : ''}>其它</option>
+                    </select>
+                    <input type="text" id="custom_ONLINE_BASE_URL" placeholder="请输入自定义API地址" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box; margin-top: 4px; display:${config.ONLINE_BASE_URL !== 'https://vg.v1api.cc/v1' ? 'block' : 'none'};" value="${config.ONLINE_BASE_URL !== 'https://vg.v1api.cc/v1' ? config.ONLINE_BASE_URL : ''}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">联网搜索模型</label>
+                    <input type="text" id="cfg_ONLINE_MODEL" placeholder="net-gpt-4o-mini" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ONLINE_MODEL || 'net-gpt-4o-mini'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">API Key</label>
+                    <input type="text" id="cfg_ONLINE_API_KEY" placeholder="sk-xxxxxxxxxx" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ONLINE_API_KEY || ''}">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">温度 (0-1)</label>
+                        <input type="number" id="cfg_ONLINE_API_TEMPERATURE" step="0.1" min="0" max="1" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ONLINE_API_TEMPERATURE || 0.8}">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">最大Token</label>
+                        <input type="number" id="cfg_ONLINE_API_MAX_TOKEN" step="100" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ONLINE_API_MAX_TOKEN || 2000}">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">触发联网请求的提示词</label>
+                    <input type="text" id="cfg_SEARCH_DETECTION_PROMPT" placeholder="天气、最新新闻..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.SEARCH_DETECTION_PROMPT || '天气、最新的新闻事件使用、歌曲'}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">联网API固定提示词 (可选)</label>
+                    <input type="text" id="cfg_ONLINE_FIXED_PROMPT" placeholder="当前所在地为..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-color); font-size: 12px; box-sizing: border-box;" value="${config.ONLINE_FIXED_PROMPT || ''}">
+                </div>
+            `;
+        }
+
+        function toggleCustomUrl(prefix) {
+            const select = document.getElementById('cfg_' + prefix);
+            const customInput = document.getElementById('custom_' + prefix);
+            customInput.style.display = select.value === 'other' ? 'block' : 'none';
+        }
+
+        function toggleAssistantFields() {
+            const enabled = document.getElementById('cfg_ENABLE_ASSISTANT_MODEL').checked;
+            document.getElementById('assistantFields').style.display = enabled ? 'block' : 'none';
+        }
+
+        function openModelModal(type) {
+            currentModalType = type;
+            const modal = document.getElementById('modelModal');
+            const iconMap = {chat: '🤖', image: '🎨', online: '🌐', recognition: '🖼️'};
+            const titleMap = {chat: 'Chat模型配置', image: '图片生成配置', online: '联网搜索配置', recognition: '图片识别配置'};
+            const subtitleMap = {chat: '管理主模型与辅助模型的完整配置', image: '管理图片生成与自拍模式的完整配置', online: '管理联网搜索的完整配置', recognition: '管理图片与表情包识别的完整配置'};
+            const builderMap = {chat: buildChatForm, image: buildImageForm, online: buildOnlineForm, recognition: buildRecognitionForm};
+
+            document.getElementById('modelModalIcon').textContent = iconMap[type] || '🤖';
+            document.getElementById('modelModalTitle').textContent = titleMap[type] || '修改配置';
+            document.getElementById('modelModalSubtitle').textContent = subtitleMap[type] || '管理完整配置';
+
+            document.getElementById('modelModalBody').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">加载中...</div>';
+            modal.classList.add('active');
+
+            fetch('/api/section_configs?section=' + type)
+                .then(res => res.json())
+                .then(config => {
+                    document.getElementById('modelModalBody').innerHTML = builderMap[type](config);
+                })
+                .catch(err => {
+                    console.error('加载配置失败:', err);
+                    document.getElementById('modelModalBody').innerHTML = '<div style="text-align:center;padding:20px;color:red;">加载配置失败</div>';
+                });
+        }
+
+        function closeModelModal() {
+            document.getElementById('modelModal').classList.remove('active');
+            currentModalType = null;
+        }
+
+        function getVal(id) {
+            const el = document.getElementById(id);
+            if (!el) return null;
+            if (el.type === 'checkbox') return el.checked;
+            return el.value;
+        }
+
+        function saveModelConfig() {
+            if (!currentModalType) return;
+
+            var keys = [];
+            if (currentModalType === 'chat') {
+                keys = ['DEEPSEEK_BASE_URL', 'MODEL', 'MAX_TOKEN', 'TEMPERATURE', 'REMOVE_PARENTHESES', 'ENABLE_INTERRUPT_REPLY', 'ENABLE_ASSISTANT_MODEL', 'ASSISTANT_BASE_URL', 'ASSISTANT_MODEL', 'ASSISTANT_MAX_TOKEN', 'ASSISTANT_TEMPERATURE', 'USE_ASSISTANT_FOR_MEMORY_SUMMARY'];
+            } else if (currentModalType === 'image') {
+                keys = ['ENABLE_IMAGE_GENERATION', 'USE_ASSISTANT_FOR_IMAGE_GENERATION', 'IMAGE_DETECTION_USE_ASSISTANT', 'IMAGE_GENERATION_KEYWORD', 'ENABLE_SELFIE_MODE', 'SELFIE_KEYWORD', 'USER_SELFIE_DESCRIPTION', 'IMAGE_GENERATION_BASE_URL', 'IMAGE_GENERATION_MODEL', 'IMAGE_GENERATION_API_KEY', 'IMAGE_GENERATION_SIZE', 'IMAGE_GENERATION_N'];
+            } else if (currentModalType === 'online') {
+                keys = ['ENABLE_ONLINE_API', 'ONLINE_BASE_URL', 'ONLINE_MODEL', 'ONLINE_API_KEY', 'ONLINE_API_TEMPERATURE', 'ONLINE_API_MAX_TOKEN', 'SEARCH_DETECTION_PROMPT', 'ONLINE_FIXED_PROMPT'];
+            } else if (currentModalType === 'recognition') {
+                keys = ['ENABLE_IMAGE_RECOGNITION', 'ENABLE_EMOJI_RECOGNITION', 'MOONSHOT_BASE_URL', 'MOONSHOT_MODEL', 'MOONSHOT_API_KEY', 'MOONSHOT_TEMPERATURE'];
+            }
+
+            var config = {};
+            keys.forEach(function(key) {
+                var selectEl = document.getElementById('cfg_' + key);
+                if (selectEl && selectEl.tagName === 'SELECT') {
+                    var customEl = document.getElementById('custom_' + key);
+                    var val = selectEl.value === 'other' && customEl ? customEl.value.trim() : selectEl.value;
+                    if (val) config[key] = val;
+                } else {
+                    var val = getVal('cfg_' + key);
+                    if (val !== null) config[key] = val;
+                }
+            });
+
+            fetch('/api/save_section_config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({section: currentModalType, config: config})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('保存失败: ' + data.error, 'error');
+                } else {
+                    showToast('配置已保存', 'success');
+                    closeModelModal();
+                    refreshModelLabels();
+                }
+            })
+            .catch(err => {
+                console.error('保存配置失败:', err);
+                showToast('保存失败', 'error');
+            });
+        }
+
+        function refreshModelLabels() {
+            fetch('/api/model_configs')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.MODEL) document.getElementById('chatModelLabel').textContent = data.MODEL;
+                    if (data.IMAGE_GENERATION_MODEL) document.getElementById('imageModelLabel').textContent = data.IMAGE_GENERATION_MODEL;
+                    if (data.ONLINE_MODEL) document.getElementById('onlineModelLabel').textContent = data.ONLINE_MODEL;
+                    if (data.MOONSHOT_MODEL) document.getElementById('recognitionModelLabel').textContent = data.MOONSHOT_MODEL;
+                })
+                .catch(err => console.error('获取模型配置失败:', err));
         }
 
         loadUpdateLog();
