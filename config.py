@@ -119,7 +119,7 @@ USE_VOICE_CALL_FOR_REMINDERS = True
 # 联网API配置
 ENABLE_ONLINE_API = True
 ONLINE_BASE_URL = 'https://api.gptgod.online/v1'
-ONLINE_MODEL = 'net-gpt-4o-mini'
+ONLINE_MODEL = 'gemini-2.5-flash-all'
 ONLINE_API_KEY = 'apikey'
 ONLINE_API_TEMPERATURE = 0.8
 ONLINE_API_MAX_TOKEN = 2000

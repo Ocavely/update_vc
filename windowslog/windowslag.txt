@@ -1,5 +1,5 @@
 windowslag = true
 mostupdate = true
-updateversion = 2.3
+updateversion = 2.7
 closewindows = false
-nowversion = 2.3
+nowversion = 2.7
