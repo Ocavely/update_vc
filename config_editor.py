@@ -887,7 +887,8 @@ def get_feature_settings():
             'ENABLE_ASSISTANT_MODEL': config.get('ENABLE_ASSISTANT_MODEL', True),
             'ENABLE_IMAGE_GENERATION': config.get('ENABLE_IMAGE_GENERATION', True),
             'ENABLE_ONLINE_API': config.get('ENABLE_ONLINE_API', True),
-            'EMOJI_SENDING_PROBABILITY': config.get('EMOJI_SENDING_PROBABILITY', 20)
+            'EMOJI_SENDING_PROBABILITY': config.get('EMOJI_SENDING_PROBABILITY', 20),
+            'ACTIVE_IMAGE_PROBABILITY': config.get('ACTIVE_IMAGE_PROBABILITY', 50)
         })
     except Exception as e:
         app.logger.error(f"获取功能设置失败: {e}")
@@ -937,6 +938,32 @@ def update_emoji_prob():
         update_config({'EMOJI_SENDING_PROBABILITY': probability})
         app.logger.info(f"表情发送概率已设置为 {probability}%")
         
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"更新概率失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update_active_image_prob', methods=['POST'])
+def update_active_image_prob():
+    """更新主动图片生成概率"""
+    try:
+        data = request.json
+        probability = data.get('probability')
+
+        if probability is None:
+            return jsonify({'error': '未指定概率'}), 400
+
+        try:
+            probability = int(probability)
+        except:
+            return jsonify({'error': '概率值无效'}), 400
+
+        if probability < 0 or probability > 100:
+            return jsonify({'error': '概率值应在0-100之间'}), 400
+
+        update_config({'ACTIVE_IMAGE_PROBABILITY': probability})
+        app.logger.info(f"主动图片生成概率已设置为 {probability}%")
+
         return jsonify({'success': True})
     except Exception as e:
         app.logger.error(f"更新概率失败: {e}")
@@ -1313,6 +1340,12 @@ def save_all_config():
             prob = data['EMOJI_SENDING_PROBABILITY']
             if isinstance(prob, int) and 0 <= prob <= 100:
                 new_values['EMOJI_SENDING_PROBABILITY'] = prob
+        
+        # 更新主动图片概率
+        if 'ACTIVE_IMAGE_PROBABILITY' in data:
+            prob = data['ACTIVE_IMAGE_PROBABILITY']
+            if isinstance(prob, int) and 0 <= prob <= 100:
+                new_values['ACTIVE_IMAGE_PROBABILITY'] = prob
         
         # 更新用户列表（如果包含在请求中）
         if 'LISTEN_LIST' in data:

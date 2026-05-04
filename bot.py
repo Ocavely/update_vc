@@ -78,6 +78,11 @@ _cfg = _load_save_config()
 globals().update(_cfg)
 del _cfg  # 清理临时变量
 
+# 为新配置提供默认值（兼容旧版save.config）
+for _key, _default in [('ACTIVE_IMAGE_PROBABILITY', 50)]:
+    if _key not in globals():
+        globals()[_key] = _default
+
 # 导入GPT-SoVITS TTS模块
 try:
     from gpt_sovits_tts import tts_service
@@ -2451,6 +2456,16 @@ def process_user_messages(user_id):
             if "</think>" in reply:
                 reply = reply.split("</think>", 1)[1].strip()
 
+            # 主动表情功能：在正常回复后额外生成日常活动图片
+            if not is_auto_message:
+                try:
+                    active_emoji_image = handle_active_emoji(user_id, merged_message, reply)
+                    if active_emoji_image:
+                        logger.info(f"主动表情图片已生成，额外发送给 {user_id}")
+                        send_generated_image(user_id, active_emoji_image)
+                except Exception as ae:
+                    logger.error(f"主动表情处理异常: {ae}")
+
             # 屏蔽记忆片段发送（如果包含）
             if "## 记忆片段" not in reply:
                 send_reply(user_id, sender_name, username, merged_message, reply)
@@ -2934,6 +2949,91 @@ def is_emoji_request(text: str) -> Optional[str]:
 
     except Exception as e:
         logger.error(f"情绪判断失败: {str(e)}")
+        return None
+
+
+def is_asking_what_doing(message: str, user_id: str) -> bool:
+    """检测用户是否在问'你在干嘛'之类的问题"""
+    try:
+        prompt = f"""请判断以下消息是否在询问对方'在做什么'、'在干嘛'、'干什么呢'之类的日常活动询问。
+只需要回复'是'或'否'。
+消息：{message}"""
+        if ENABLE_ASSISTANT_MODEL:
+            response = get_assistant_response(prompt, f"active_emoji_detect_{user_id}").strip()
+        else:
+            response = get_deepseek_response(prompt, "system", store_context=False).strip()
+        result = '是' in response
+        logger.info(f"主动表情检测: 消息'{message[:30]}' -> {'是' if result else '否'} (AI: {response})")
+        return result
+    except Exception as e:
+        logger.error(f"主动表情检测失败: {e}")
+        return False
+
+
+def handle_active_emoji(user_id: str, original_message: str, ai_reply: str) -> Optional[str]:
+    """处理主动表情功能：用户问'在干嘛'时，使用chat模型回复中的活动生成图片
+    返回图片路径（成功生成图片），返回None（未触发或不需要生成图片）
+    """
+    global image_generation_in_progress
+
+    try:
+        if not ENABLE_IMAGE_GENERATION:
+            return None
+
+        # 检测是否在问"你在干嘛"
+        if not is_asking_what_doing(original_message, user_id):
+            return None
+
+        # 从chat模型的回复中提取活动描述（取第一句的前20字）
+        activity = ai_reply.strip()
+        if "</think>" in activity:
+            activity = activity.split("</think>", 1)[1].strip()
+        # 清理格式标记
+        for sep in ['\\', '\n', '。', '！', '？', '~', '～']:
+            activity = activity.split(sep)[0].strip()
+        activity = activity[:20]
+        logger.info(f"主动表情从chat回复提取的活动: {activity}")
+
+        if not activity:
+            return None
+
+        # 主动图片概率：触发则生成图片，未触发则不生成
+        if random.randint(0, 100) > ACTIVE_IMAGE_PROBABILITY:
+            logger.info(f"主动图片未触发（ACTIVE_IMAGE_PROBABILITY={ACTIVE_IMAGE_PROBABILITY}%），不生成图片")
+            return None
+
+        # 生成图片
+        selfie_desc = (USER_SELFIE_DESCRIPTION or '').strip() or '一个普通人'
+        # 获取当前时间段
+        current_hour = datetime.now().hour
+        if 5 <= current_hour < 12:
+            time_desc = "早晨"
+        elif 12 <= current_hour < 14:
+            time_desc = "中午"
+        elif 14 <= current_hour < 18:
+            time_desc = "下午"
+        elif 18 <= current_hour < 22:
+            time_desc = "晚上"
+        else:
+            time_desc = "深夜"
+
+        image_prompt = f"{selfie_desc}正在{activity}，{time_desc}的手机自拍视角记录这一刻，手机摄像头所拍摄画面，可以看到{selfie_desc}部分身体和正在做的事情"
+        logger.info(f"主动表情生成图片: {image_prompt}")
+
+        image_generation_in_progress = True
+        image_path = generate_image(image_prompt)
+        image_generation_in_progress = False
+
+        if image_path:
+            logger.info(f"主动表情图片生成成功: {image_path}")
+            return image_path
+        else:
+            logger.warning("主动表情图片生成失败")
+            return None
+
+    except Exception as e:
+        logger.error(f"主动表情处理失败: {e}")
+        image_generation_in_progress = False
         return None
 
 

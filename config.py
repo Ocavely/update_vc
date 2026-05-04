@@ -53,6 +53,9 @@ EMOJI_DIR = 'emojis'
 ENABLE_EMOJI_SENDING = True
 EMOJI_SENDING_PROBABILITY = 20
 
+# 主动表情包功能（用户在问"你在干嘛"时，AI画日常活动图）
+ACTIVE_IMAGE_PROBABILITY = 50
+
 # 自动消息配置
 AUTO_MESSAGE = '请你模拟系统设置的角色，询问对方在做什么或者有没有想你或者询问为什么不理你了'
 ENABLE_AUTO_MESSAGE = True
