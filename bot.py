@@ -563,6 +563,20 @@ last_image_gen_time = 0.0 # 上一次图片生成时间
 image_generation_in_progress = False # 图片生成进行中标记
 last_generated_image_path = None # 最后一次生成的图片路径（用于防止生成图片后被识别）
 
+# 消息去重缓存：{(who, msg_content): timestamp} 防止同一消息被重复处理
+_recent_processed_messages = {}
+_recent_processed_lock = threading.Lock()
+MESSAGE_DEDUP_TTL = 5.0  # 5秒内同一消息只处理一次
+
+# 发送去重缓存：{(user_id, file_path): timestamp} 防止同一文件被重复发送
+_recently_sent_files = {}
+_recently_sent_lock = threading.Lock()
+SEND_DEDUP_TTL = 10.0  # 10秒内同一文件不重复发送
+
+# 表情去重：记录每个情绪分类上次选择的文件名
+_last_selected_emoji = {}
+_last_emoji_lock = threading.Lock()
+
 _BLACKLIST_FETCHED = False
 _BLACKLIST_STRINGS = None
 
@@ -1505,6 +1519,20 @@ def message_listener(msg, chat):
     if should_process_this_message:
         msg.content = content_for_handler 
         logger.info(f'最终准备处理消息 from chat "{who}" by sender "{sender}": {msg.content[:100]}')
+        
+        # --- 消息去重：防止同一消息被重复处理 ---
+        global _recent_processed_messages
+        msg_signature = (who, str(msg.content))
+        with _recent_processed_lock:
+            now = time.time()
+            # 清理过期记录
+            expired = [k for k, v in _recent_processed_messages.items() if now - v > MESSAGE_DEDUP_TTL]
+            for k in expired:
+                del _recent_processed_messages[k]
+            if msg_signature in _recent_processed_messages:
+                logger.info(f"检测到重复消息，已跳过: {msg.content[:50]}...")
+                return
+            _recent_processed_messages[msg_signature] = now
         
         # 保存用户最后发送的消息对象，用于拍一拍功能
         global user_last_msg
@@ -2605,6 +2633,18 @@ def send_reply(user_id, sender_name, username, original_merged_message, reply, i
         # --- 发送混合消息队列 ---
         for idx, (action_type, content) in enumerate(message_actions):
             if action_type == 'emoji':
+                # 发送去重：同一表情文件10秒内不重复发送
+                global _recently_sent_files
+                emoji_send_key = (user_id, os.path.abspath(content) if os.path.isabs(content) else content)
+                with _recently_sent_lock:
+                    now = time.time()
+                    expired = [k for k, v in _recently_sent_files.items() if now - v > SEND_DEDUP_TTL]
+                    for k in expired:
+                        del _recently_sent_files[k]
+                    if emoji_send_key in _recently_sent_files:
+                        logger.info(f"检测到重复表情发送，已跳过: {content}")
+                        continue
+                    _recently_sent_files[emoji_send_key] = now
                 # 表情包发送三次重试
                 success = False
                 for attempt in range(3):
@@ -2984,13 +3024,28 @@ def handle_active_emoji(user_id: str, original_message: str, ai_reply: str) -> O
         if not is_asking_what_doing(original_message, user_id):
             return None
 
-        # 从chat模型的回复中提取活动描述（取第一句的前20字）
+        # 从chat模型的回复中提取活动描述
         activity = ai_reply.strip()
         if "</think>" in activity:
             activity = activity.split("</think>", 1)[1].strip()
-        # 清理格式标记
-        for sep in ['\\', '\n', '。', '！', '？', '~', '～']:
-            activity = activity.split(sep)[0].strip()
+        # 去掉开头常见的语气词/填充词
+        filler_words = ['哈哈', '呵呵', '嘿嘿', '嗯', '哦', '喔', '噢', '哎呀', '哇', '诶', '嗨', '哎', '呐', '啦', '咯', '喽', '嘿', '呵']
+        for fw in filler_words:
+            if activity.startswith(fw):
+                activity = activity[len(fw):].strip()
+                break
+        # 按句子切分，取第一个有意义的句子
+        import re
+        sentences = re.split(r'[。！？~～\n]', activity)
+        for s in sentences:
+            s = s.strip().lstrip('，,、：:；;').strip()
+            if len(s) >= 3:
+                activity = s
+                break
+        else:
+            # 如果没有足够长的句子，回退到按逗号切分
+            for sep in ['，', ',', '、', '；', ';']:
+                activity = activity.split(sep)[0].strip()
         activity = activity[:20]
         logger.info(f"主动表情从chat回复提取的活动: {activity}")
 
@@ -3055,8 +3110,17 @@ def send_emoji(emotion: str) -> Optional[str]:
             logger.warning(f"表情文件夹 {emotion} 为空")
             return None
 
-        # 随机选择并返回表情路径
-        selected_emoji = random.choice(emoji_files)
+        # 避免连续选择同一个表情文件（如果文件夹内有多个文件）
+        global _last_selected_emoji
+        with _last_emoji_lock:
+            last_file = _last_selected_emoji.get(emotion)
+            if len(emoji_files) > 1 and last_file in emoji_files:
+                # 排除上次选中的文件，重新选择
+                candidates = [f for f in emoji_files if f != last_file]
+                selected_emoji = random.choice(candidates)
+            else:
+                selected_emoji = random.choice(emoji_files)
+            _last_selected_emoji[emotion] = selected_emoji
         return os.path.join(emoji_folder, selected_emoji)
 
     except FileNotFoundError:
@@ -3080,8 +3144,6 @@ def generate_image(prompt: str) -> Optional[str]:
         import json
         import requests
         from datetime import datetime
-        from urllib.parse import quote
-
         logger.info(f"图片生成配置: BASE_URL={IMAGE_GENERATION_BASE_URL}, MODEL={IMAGE_GENERATION_MODEL}, SIZE={IMAGE_GENERATION_SIZE}, N={IMAGE_GENERATION_N}")
 
         url = f"{IMAGE_GENERATION_BASE_URL}/v1/images/generations"
@@ -3099,9 +3161,7 @@ def generate_image(prompt: str) -> Optional[str]:
 
         logger.info(f"正在生成图片: {prompt[:50]}...")
 
-        encoded_prompt = quote(prompt.encode('utf-8'))
-        data["prompt"] = encoded_prompt
-        logger.info(f"URL编码后的prompt: {encoded_prompt[:100]}...")
+        # prompt直接以明文发送JSON body，不需要URL编码
 
         payload = json.dumps(data)
         response = requests.request("POST", url, headers=headers, data=payload, timeout=600)
@@ -3169,6 +3229,20 @@ def send_generated_image(user_id: str, image_path: str) -> bool:
     if not image_path or not os.path.exists(image_path):
         logger.error(f"图片文件不存在: {image_path}")
         return False
+
+    # 发送去重：同一文件10秒内不重复发送
+    global _recently_sent_files
+    send_key = (user_id, os.path.abspath(image_path))
+    with _recently_sent_lock:
+        now = time.time()
+        # 清理过期记录
+        expired = [k for k, v in _recently_sent_files.items() if now - v > SEND_DEDUP_TTL]
+        for k in expired:
+            del _recently_sent_files[k]
+        if send_key in _recently_sent_files:
+            logger.info(f"检测到重复图片发送，已跳过: {image_path}")
+            return True
+        _recently_sent_files[send_key] = now
     
     success = False
     for attempt in range(3):
